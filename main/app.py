@@ -13,6 +13,7 @@ import base64
 from io import BytesIO #Converts data from Database into bytes
 from datetime import datetime
 from pathlib import Path
+import shutil
 
 # Utility
 # comment this when running python3 create_db.py
@@ -197,6 +198,9 @@ def build(user_id):
     buildCorpus(model_path,screens,entities,apps,docs)
 
     #create matrix for retrieval
+    # Path(os.path.join(model_path,'temp')).rmdir()
+    if os.path.exists(os.path.join(model_path,'temp')):
+        shutil.rmtree(os.path.join(model_path,'temp'))
     data = DataLoader(model_path)
     params["corpus_directory"] = model_path
     projector = DataProjector(data, params, model_path)
