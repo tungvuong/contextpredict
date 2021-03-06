@@ -386,6 +386,7 @@ def predict():
 @app.route('/retrieve', methods=['POST'])
 def retrieve():
     userid = 'C1MR3058G940'
+    # userid = request.form['username']
     all_recs = RecContent.query.filter_by(userid=userid)
     return {'recs':[rec.text for rec in [all_recs[-1]]]}
 

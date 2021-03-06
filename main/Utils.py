@@ -208,7 +208,15 @@ def filenameToTime(text):
 	return datetime.utcfromtimestamp( float(text.replace(',','.').replace('_idle','')) )
 def detect_entities(mytext):
     api_keys = [
-        ['510PxKJWLcqRcywFcfvTcjVfePAr03FjjifzKzXoTgAX','https://api.eu-gb.natural-language-understanding.watson.cloud.ibm.com/instances/3e06a67a-c07c-48f7-a122-441887dffe31']
+        ['510PxKJWLcqRcywFcfvTcjVfePAr03FjjifzKzXoTgAX','https://api.eu-gb.natural-language-understanding.watson.cloud.ibm.com/instances/3e06a67a-c07c-48f7-a122-441887dffe31'],
+        ['B27mc3Cwbn8WM0I7KZA8bTX_zSlPI0DYSM4cA5iR0yhw','https://api.eu-gb.natural-language-understanding.watson.cloud.ibm.com/instances/db810944-aba3-4e4f-a09e-bb36fe56b939'],
+        ['NQqmqzPxC9k-uuvwIufkTfP7bnRhinw07ZBM16g_Q9L5','https://api.eu-gb.natural-language-understanding.watson.cloud.ibm.com/instances/bf017fc1-0a4f-47c4-bb99-f57f1d9a85a1'],
+        ['E8hWog4WEv4U5GSCWelj8-LA-uoNHR309V4Dwtkl0CGZ','https://api.eu-gb.natural-language-understanding.watson.cloud.ibm.com/instances/6368e63c-c876-4cb3-9831-b3aacf9e49a2'],
+        ['0nN9UNR6KyKKVoqRXaaNrIuHhQwFoBBtGp5mhTXyzaxa','https://api.eu-gb.natural-language-understanding.watson.cloud.ibm.com/instances/3ede59cd-1df9-4a5e-9b01-e8e94e22b2e4'],
+        ['BQ66VkFQAX5J99zgNvZlrQThDkgGv0VuwTETfnYWv_vL','https://api.eu-gb.natural-language-understanding.watson.cloud.ibm.com/instances/72a0210b-b5fb-43e9-9d90-48aec2ecbf98'],
+        ['5PZzZznrqAG5B4o4kgs2rMBYLkfRndh_RDJnQa9qw70E','https://api.eu-gb.natural-language-understanding.watson.cloud.ibm.com/instances/ad303cf9-799e-4774-b7ad-1e26a3e78c72'],
+        ['gpR4DPPZATUqvpMD7sjKhmg1TCI9KxEoYha_nJigcDti','https://api.eu-gb.natural-language-understanding.watson.cloud.ibm.com/instances/6cd6a44c-bea4-40d8-89f3-d16b2df21e08'],
+        ['fh3zzAkRExKT1yVpV_kSFJztYS7yoeltXv2neUKg85Z_','https://api.eu-gb.natural-language-understanding.watson.cloud.ibm.com/instances/4a16e4a8-6812-47ab-91a2-a12101367082']
     ]
     for key in api_keys:
         apikey = key[0]
