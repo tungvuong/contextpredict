@@ -34,8 +34,9 @@ from gensim.models import CoherenceModel
 
 # Flask
 import flask
-from flask import Flask, render_template, request, flash, redirect, url_for, send_file # Converst bytes into a file for downloads
+from flask import Flask, render_template, request, make_response, send_from_directory, flash, redirect, url_for, send_file # Converst bytes into a file for downloads
 from flask import request, Response
+from flask_cors import CORS, cross_origin
 
 # FLask SQLAlchemy, Database
 from flask_sqlalchemy import SQLAlchemy
@@ -48,6 +49,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = basedir
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'dev'
 app.config["DEBUG"] = True
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+cors = CORS(app, resources={r"/retrieve": {"origins": "*"}})
 db = SQLAlchemy(app)
 
 
@@ -214,12 +218,17 @@ def build(user_id):
 
 
 # Show Pic
-@app.route('/pic/<int:pic_id>')
+@app.route('/pic/<int:pic_id>.jpeg')
 def pic(pic_id):
-
     get_pic = FileContent.query.filter_by(id=pic_id).first()
-
-    return render_template('pic.html', pic=get_pic)
+    response = make_response(get_pic.data)
+    response.headers.set('Content-Type', 'image/jpeg')
+    #response.headers.set(
+    #    'Content-Disposition', 'attachment', filename='%s.jpg' % pic_id)
+    return response
+    
+    # # return "data:;base64,"+get_pic.rendered_data
+    # return render_template('pic.html', pic=get_pic)
 
 # Update
 @app.route('/update/<int:pic_id>', methods=['GET', 'POST'])
@@ -265,23 +274,35 @@ def predict():
 
     file = request.files['image']
     data = file.read()
-    render_file = render_picture(data)
+    location = request.form['extra']
+    userid = request.form['username']
     lang = request.form['lang']
+    pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
+    og_img = Image.open(file.stream)
+
+    # crop in case of ui in the chrome screen
+    if "chrome" in json.loads(location)["appname"].lower():
+        f = Image.open(file)
+        w,h = f.size
+        og_img = f.crop((0, 0, w-300, h))
+        buffered = BytesIO()
+        og_img.save(buffered, format="JPEG")
+        data = buffered.getvalue()
+
+    render_file = render_picture(data)
+
     # convert screen to text - tesseract
-    text = pytesseract.image_to_string(Image.open(file.stream), lang=lang)
+    text = pytesseract.image_to_string(og_img, lang=lang)
     # ibm nlp
     entities = detect_entities(text)
 
-    location = request.form['extra']
-    userid = request.form['username']
-    pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
 
     newFile = FileContent(name=file.filename.split('/')[-1], data=data, rendered_data=render_file, text=text, location=location, userid=userid, pic_date=pic_date, entities=entities)
     db.session.add(newFile)
     db.session.commit() 
 
     # Predict here
-    # userid = 'C1MR3058G940'
+    docs = FileContent.query.filter((FileContent.userid == userid))
     model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
     data = DataLoader(model_path)
     # data.print_info()
@@ -289,6 +310,8 @@ def predict():
     projector = DataProjector(data, params, model_path)
     projector.generate_latent_space()
     projector.create_feature_matrices()
+
+    pinned_item = []           # the items that are pinned in the frontend (needed for calculating pair similarity)
 
     for method_ind in range(num_methods):
         method = Method_list[method_ind]
@@ -306,10 +329,10 @@ def predict():
 
         online_data = FileContent.query.filter((FileContent.userid == userid))
         # print(online_data[-1])
-        online_screens = [screen.text for screen in [online_data[-1]]]
-        online_entities = [getEntities(screen.entities) for screen in [online_data[-1]]]
-        online_apps = [getApp(screen.location) for screen in [online_data[-1]]]
-        online_docs = [getDoc(screen.location) for screen in [online_data[-1]]]
+        online_screens = [screen.text for screen in online_data[-2:]]
+        online_entities = [getEntities(screen.entities) for screen in online_data[-2:]]
+        online_apps = [getApp(screen.location) for screen in online_data[-2:]]
+        online_docs = [getDoc(screen.location) for screen in online_data[-2:]]
         fv_online_docs = getOnlineDocs(model_path, online_screens, online_entities, online_apps, online_docs)
         fb_online_docs+= [1 for i in range(len(fv_online_docs))]
 
@@ -377,19 +400,68 @@ def predict():
         for i in range(params["suggestion_count"]):
             print('    %d' %sorted_docs_valid[i])
 
-    newRec = RecContent(userid=userid, text=str({'type':sorted_views_list}))
+
+    new_recommendations = []
+    for view in range(1, data.num_views):
+        for i in range(min(params["suggestion_count"],data.num_items_per_view[view])):
+            new_recommendations.append(sorted_views_list[view-1][i])
+            if sorted_views_list[view-1][i] not in set(recommended_terms):
+                recommended_terms.append(sorted_views_list[view-1][i])
+    #organize the recommentations in the right format
+    data_output = {}
+    data_output["keywords"] = [(sorted_views_list[0][i],data.feature_names[sorted_views_list[0][i]],
+                                scored_terms[sorted_views_list[0][i]]) for i in range(min(params["suggestion_count"],data.num_items_per_view[1])) ]
+    data_output["applications"] = [(sorted_views_list[1][i],data.feature_names[sorted_views_list[1][i]],
+                                    scored_terms[sorted_views_list[1][i]]) for i in range(min(params["suggestion_count"],data.num_items_per_view[2]))]
+    data_output["people"] = [(sorted_views_list[2][i],data.feature_names[sorted_views_list[2][i]],
+                                scored_terms[sorted_views_list[2][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[3]))]
+    # TODO: how many document? I can also send the estimated relevance.
+    #data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url']) for i in range(params["suggestion_count"])]
+    #TODO: THis is the hack to distinguish doc and term IDS. Add 600000 to doc IDs for frontend
+    # data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url'],os.path.join(snapshot_directory, "1513349785.60169.jpeg"), loadLOG(sorted_docs_valid[i])['appname']) for i in range(100)]
+    data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].location)['title'],json.loads(docs[sorted_docs_valid[i]].location)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].location)['appname']) for i in range(100)]
+    # data_output["pair_similarity"] = []
+    item_list = list(set(new_recommendations + pinned_item))
+        # an array to hold the feature vectors
+    recommended_fv = np.empty([len(item_list), projector.num_features])
+    for i in range(len(item_list)):
+        recommended_fv[i, :] = projector.item_fv(item_list[i]) #get the feature vector
+    #Compute the dot products
+    sim_matrix = np.dot(recommended_fv, recommended_fv.T)
+    #normalize the dot products
+    sim_diags = np.diagonal(sim_matrix)
+    sim_diags = np.sqrt(sim_diags)
+    for i in range(len(item_list)):
+        sim_matrix[i,:] = sim_matrix[i,:]/sim_diags
+    for i in range(len(item_list)):
+        sim_matrix[:,i] = sim_matrix[:,i]/sim_diags
+    #save pairwise similarities in a list of tuples
+    all_sims = [(item_list[i],item_list[j],sim_matrix[i,j])
+                for i in range(len(item_list)-1) for j in range(i+1,len(item_list))]
+    data_output["pair_similarity"] = all_sims
+
+
+    newRec = RecContent(userid=userid, text=json.dumps(data_output))
     db.session.add(newRec)
     db.session.commit() 
     return "file uploaded"
 
 # Upload
-@app.route('/retrieve', methods=['POST'])
-def retrieve():
-    userid = 'C1MR3058G940'
+@app.route('/retrieve/<path:path>')
+@cross_origin(origin='*',headers=['Content- Type','Authorization'])
+def retrieve(path):
+    # userid = 'C1MR3058G940'
     # userid = request.form['username']
-    all_recs = RecContent.query.filter_by(userid=userid)
-    return {'recs':[rec.text for rec in [all_recs[-1]]]}
+    all_recs = RecContent.query.filter_by(userid=path)
+    return json.dumps(json.loads(all_recs[-1].text))
 
+# UI
+# @app.route('/ui', methods=['GET', 'POST'])
+# def ui():
+#     return render_template('ui/index.html')
+@app.route('/ui/<path:path>')
+def send_js(path):
+    return send_from_directory('ui', path)
 # @app.route('/upload', methods=['POST'])
 # def upload():
 # 	return {'type':'upload'}

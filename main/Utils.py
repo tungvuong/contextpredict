@@ -32,138 +32,11 @@ from nltk.corpus import stopwords
 stop_words = stopwords.words('english')
 nlp = en_core_web_sm.load()
 
-convertValtoInt = {
-	'gender': 	{ 
-					'Female': 0, 
-					'Male': 1
-	},
-	'control': 	{ 
-					'Quite a lot': 4,
-					'Complete': 3,
-					'A fair amount': 2,
-					'Not very much': 1,
-					'None': 0,
-	},
-	'satisfaction_General': {
-					'Entirely satisfied': 4,
-					'Satisfied': 3,
-					'Neither satisfied nor dissatisfied': 2,
-					'Dissatisfied': 1,
-					'Entirely dissatisfied': 0,
-	},
-	'satisfaction_Sleep': 	{ 
-					'Entirely satisfied': 4,
-					'Satisfied': 3,
-					'Neither satisfied nor dissatisfied': 2,
-					'Dissatisfied': 1,
-					'Entirely dissatisfied': 0,
-	},
-	'satisfaction_SleepEnvironment': 	{ 
-					'Very suitable': 4,
-					'Suitable': 3,
-					'Somewhat suitable': 2,
-					'Not suitable': 1,
-					'Not suitable at all': 0,
-	},
-	'satisfaction_Diet': 	{ 
-					'Very suitable': 4,
-					'Suitable': 3,
-					'Somewhat suitable': 2,
-					'Not suitable': 1,
-					'Not suitable at all': 0,
-	},
-	'satisfaction_Exercise': 	{ 
-					'Very suitable': 4,
-					'Suitable': 3,
-					'Somewhat suitable': 2,
-					'Not suitable': 1,
-					'Not suitable at all': 0,
-	}
-
-}
-
-AllFeatures = ["gender", "workHours", "control", "satisfaction_General", "satisfaction_Sleep", "satisfaction_SleepEnvironment", "satisfaction_Diet", "satisfaction_Exercise"]
-
-AllRecs = {
-	'sl01': "Have a short sleep before your first night shift.",
-	'sl02': "If coming off night shifts, have a short sleep and go to bed earlier that night.",
-	'sl03': "Once you have identified a suitable sleep schedule try to keep to it.",
-	'sl04': "Sleep in your bedroom and avoid using it for other activities such as watching television, eating and working.",
-	'sl05': "Use heavy curtains, blackout blinds or eye shades to darken the bedroom.",
-	'sl06': "Disconnect the phone or use an answer machine and turn the ringer down.",
-	'sl07': "Ask your family not to disturb you and to keep the noise down when you are sleeping.",
-	'sl08': "If it is too noisy to sleep consider using earplugs, white noise or background music to mask external noises.",
-	'sl09': "Adjust the bedroom temperature to a comfortable level, cool conditions improve sleep.",
-	'sl10': "Avoid the use of alcohol to help you fall asleep.",
-	'sl11': "Avoid the regular use of sleeping pills and other sedatives to aid sleep. These are not recommended because they can lead to dependency and addiction.",
-	'sl12': "Go for a short walk, relax with a book, listen to music and/or take a hot bath before going to bed.",
-	'sl13': "Avoid vigorous exercise before sleep as it is stimulating and raises the body temperature.",
-	'sl14': "Don’t go to bed feeling hungry: have a light meal or snack before sleeping but avoid fatty, spicy and/or heavy meals, as these are more difficult to digest and can disturb sleep.",
-	'sl15': "Plan your domestic duties around your shift schedule and try to ensure that you do not complete them at the cost of rest/sleep.",
-	'al01': "Take moderate exercise before starting work which may increase your alertness during the shift.",
-	'al02': "Keep the light bright at work to increase your alertness.",
-	'al03': "Get up and walk around during breaks.",
-	'al04': "Plan to do more stimulating work at the times you feel most drowsy.",
-	'al05': "Keep in contact with co-workers as this may help both you and them stay alert.",
-	'al06': "Avoid driving for long periods or a long distance after a period of night shifts or long working hours.",
-	'al07': "Consider using public transport or sharing a lift with a co-worker and take it in turns to drive.",
-	'so01': "Talk to friends and family about shiftwork. If they understand the problems you are facing it will be easier for them to be supportive and considerate.",
-	'so02': "Make your family and friends aware of your shift schedule so they can include you when planning social activities.",
-	'so03': "Make the most of your time off and plan mealtimes, weekends and evenings together.",
-	'so04': "Invite others who work similar shifts to join you in social activities when others are at work and there are fewer crowds."
-}
-
-def preprocess(data):
-	res = dict(data)
-	for fea, val in res.items():
-		if fea not in AllFeatures:
-			continue
-		if fea == 'workHours':
-			if res[fea]<=25:
-				res[fea] = 1
-			if res[fea]>25 and res[fea]<=40:
-				res[fea] = 2
-			if res[fea]>40 and res[fea]<=59:
-				res[fea] = 3
-			if res[fea]>=60:
-				res[fea] = 4
-		else:
-			res[fea] = convertValtoInt[fea][val]
-	return res
-
-# Tokenize words and Clean-up text
-def sent_to_words(documents):
-	for doc in documents:
-		yield(gensim.utils.simple_preprocess(str(doc), deacc=True))  # deacc=True removes punctuations
-# Remove Stopwords
-def remove_stopwords(texts):
-	return [[word for word in simple_preprocess(str(doc)) if word not in stop_words] for doc in texts]
-# Lemmatize
-def lemmatization(texts, allowed_postags=['NOUN', 'ADJ', 'ADV']):
-	"""https://spacy.io/api/annotation"""
-	texts_out = []
-	for sent in texts:
-		doc = nlp(" ".join(sent))
-		texts_out.append([token.lemma_ for token in doc])
-	return texts_out
-def takeSecond(elem):
-	return elem[1]
-def flatRecom(seq):
-	seen_bl = set()
-	seen_add_bl = seen_bl.add
-	return [x for x in seq if not (x[0] in seen_bl or seen_add_bl(x[0]))]
-def getNumRecs(max_num_recs):
-	try:
-		num_recs = int(sys.argv[2]) if int(sys.argv[2])<=max_num_recs else max_num_recs
-		return num_recs
-	except:
-		return 5
-
 
 params = {
 
     # Number of recommended entities from each view
-    "suggestion_count": 5,
+    "suggestion_count": 10,
     # Number of online snapshots to consider (the latest snapshots)
     "imp_doc_to_consider": 4,
     # True: normalize TF-IDF weights to sum to 1, False: no normalization. TODO: DOES THIS MAKE SENSE?
@@ -316,10 +189,12 @@ def buildCorpus(model_path, screens, entities, apps, docs):
 	corpus.dictionary = gensim.corpora.Dictionary.load(dict_path, mmap=None)
 	dictionary_view = {}
 	entity_view = []
+	print(entities)
 	for e in entities:
 		entity_view+= e
 	for entity_id in corpus.dictionary.doc2bow(entity_view):
 		dictionary_view[entity_id[0]] = 1
+		print(entity_id[0], corpus.dictionary[entity_id[0]])
 	for app_id in corpus.dictionary.doc2bow(apps):
 		dictionary_view[app_id[0]] = 2
 	for doc_id in corpus.dictionary.doc2bow(docs):
@@ -330,6 +205,7 @@ def buildCorpus(model_path, screens, entities, apps, docs):
 			feature_names.append(dictionary_view[i])
 		else:
 			feature_names.append(0)
+	print(feature_names)
 	np.save(os.path.join(model_path,'views_ind_1.npy'),feature_names)
 def getOnlineDocs(model_path, screens, entities, apps, docs):
 	dict_path = os.path.join(model_path,'dictionary.dict')
@@ -369,8 +245,9 @@ def getEntities(watson):
 	keywords = []
 	if 'keywords' in detail:
 		for keyword in detail['keywords']:
-			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>3 and (len(keyword['text'])==4 and ' ' not in keyword['text']) else []
+			# keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>3 and (len(keyword['text'])==4 and ' ' not in keyword['text']) else []
+			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>3 else []
 	if 'entities' in detail:
 		for keyword in detail['entities']:
-			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>3 and (len(keyword['text'])==4 and ' ' not in keyword['text']) else []
+			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>3 else []
 	return keywords

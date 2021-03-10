@@ -3,6 +3,7 @@ from setuptools import setup, find_packages
 requires = [
     'python-dotenv',
     'flask',
+    'flask-cors',
     'jsonify',
     'pandas',
     'spacy',
