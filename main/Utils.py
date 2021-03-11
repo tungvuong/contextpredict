@@ -9,7 +9,7 @@ import itertools
 
 from collections import defaultdict
 from datetime import datetime
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 # Gensim
 import gensim
@@ -50,7 +50,7 @@ params = {
     # Number of iterations of the simulated study
     "num_iterations": 50,
     # Number of latent dimensions for data representation
-    "num_latent_dims": 100,
+    "num_latent_dims": 50,
     # Number of runs (only for the simulated study, set to 1 for real data setting)
     "num_runs": 1,  # NOT IMPLEMENTED YET
     # True: prepare the data for UI but have the interaction in the terminal
@@ -116,7 +116,7 @@ def detect_entities(mytext):
 if __name__ == '__main__':
 	testdata = {'control': 'Complete'}
 	print(preprocess(testdata))
-def iter_docs(screens, entities, apps, docs, stoplist, amount_docs_already_index):
+def iter_docs(screens, entities, apps, docs, webqueries, stoplist, amount_docs_already_index):
     for idx, text in enumerate(screens):
         if (idx >= amount_docs_already_index):
             text = text.strip().lower()
@@ -133,15 +133,16 @@ def iter_docs(screens, entities, apps, docs, stoplist, amount_docs_already_index
             texts+= entities_in_text
             texts+= [apps[idx]]
             texts+= [docs[idx]]
+            texts+= [webqueries[idx]]
             yield (x for x in texts)
 class MyCorpus(object):
-    def __init__(self, screens, entities, apps, docs, stoplist, amount_docs_already_index):
+    def __init__(self, screens, entities, apps, docs, webqueries, stoplist, amount_docs_already_index):
         self.screens = screens
         self.entities = entities
         self.stoplist = stoplist
         self.amount_docs_already_index = amount_docs_already_index
-        self.texts = iter_docs(screens, entities, apps, docs, stoplist, amount_docs_already_index)
-        texts_for_frequency = iter_docs(screens, entities, apps, docs, stoplist, amount_docs_already_index)
+        self.texts = iter_docs(screens, entities, apps, docs, webqueries, stoplist, amount_docs_already_index)
+        texts_for_frequency = iter_docs(screens, entities, apps, docs, webqueries, stoplist, amount_docs_already_index)
         frequency = defaultdict(int)
         for text in texts_for_frequency:
             for token in text:
@@ -153,7 +154,7 @@ class MyCorpus(object):
     def __iter__(self):
         for text in self.texts:
             yield self.dictionary.doc2bow(text)
-def buildCorpus(model_path, screens, entities, apps, docs):
+def buildCorpus(model_path, screens, entities, apps, docs, webqueries):
 	#check if model was saved and load lsi model
 	stoplist = set(nltk.corpus.stopwords.words("english"))
 	corpus_already_index = None
@@ -169,7 +170,7 @@ def buildCorpus(model_path, screens, entities, apps, docs):
 	# if saved model exist
 	if corpus_already_index != None:
 		if (len(screens)>amount_docs_already_index):
-			corpus = MyCorpus(screens, entities, apps, docs, stoplist, amount_docs_already_index)
+			corpus = MyCorpus(screens, entities, apps, docs, webqueries, stoplist, amount_docs_already_index)
 			dict2_to_dict1 = corpus_already_index.dictionary.merge_with(corpus.dictionary)
 			merged_corpus = itertools.chain(corpus_already_index,dict2_to_dict1[corpus])
 			corpora.MmCorpus.serialize(merged_corpus_path,merged_corpus)
@@ -180,7 +181,7 @@ def buildCorpus(model_path, screens, entities, apps, docs):
 		else:
 			corpus = corpus_already_index
 	else:
-		corpus = MyCorpus(screens, entities, apps, docs, stoplist, 0)
+		corpus = MyCorpus(screens, entities, apps, docs, webqueries, stoplist, 0)
 		corpora.MmCorpus.serialize(corpus_path, corpus)
 		corpus.dictionary.save(dict_path)
 
@@ -194,11 +195,12 @@ def buildCorpus(model_path, screens, entities, apps, docs):
 		entity_view+= e
 	for entity_id in corpus.dictionary.doc2bow(entity_view):
 		dictionary_view[entity_id[0]] = 1
-		print(entity_id[0], corpus.dictionary[entity_id[0]])
 	for app_id in corpus.dictionary.doc2bow(apps):
 		dictionary_view[app_id[0]] = 2
 	for doc_id in corpus.dictionary.doc2bow(docs):
 		dictionary_view[doc_id[0]] = 3
+	for webquery_id in corpus.dictionary.doc2bow(webqueries):
+		dictionary_view[webquery_id[0]] = 4
 	feature_names = []
 	for i in range(corpus.num_terms):
 		if i in dictionary_view:
@@ -207,7 +209,7 @@ def buildCorpus(model_path, screens, entities, apps, docs):
 			feature_names.append(0)
 	print(feature_names)
 	np.save(os.path.join(model_path,'views_ind_1.npy'),feature_names)
-def getOnlineDocs(model_path, screens, entities, apps, docs):
+def getOnlineDocs(model_path, screens, entities, apps, docs, webqueries):
 	dict_path = os.path.join(model_path,'dictionary.dict')
 	dictionary = gensim.corpora.Dictionary.load(dict_path, mmap=None)
 	stoplist = set(nltk.corpus.stopwords.words("english"))
@@ -222,7 +224,7 @@ def getOnlineDocs(model_path, screens, entities, apps, docs):
 				entities_in_text.append(e)
 			text = text.replace(raw_e, "")
 		doc = [x for x in gensim.utils.tokenize(text.strip().lower(), lowercase=True, deacc=True, errors="ignore")
-					if x not in stoplist and len(x)>2] + entities[idx] + [apps[idx]] + [docs[idx]]
+					if x not in stoplist and len(x)>2] + entities[idx] + [apps[idx]] + [docs[idx]] + [webqueries[idx]]
 		all_online_docs+= [dictionary.doc2bow(doc)]
 	return all_online_docs
 
@@ -240,6 +242,13 @@ def getDoc(extra_info):
 	detail = json.loads(extra_info)
 	title = detail["title"].lower().replace(' ','_').replace('.','_')
 	return title
+def getWebQuery(extra_info):
+	detail = json.loads(extra_info)
+	url = detail["url"].lower()
+	query = ''
+	if ('google' in url or 'bing' in url or 'duckduckgo' in url) and 'q=' in url:
+		query = unquote(url).split('q=')[1].split('&')[0].replace('+','_')
+	return query
 def getEntities(watson):
 	detail = json.loads(watson)
 	keywords = []

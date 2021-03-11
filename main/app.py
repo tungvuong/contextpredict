@@ -40,6 +40,7 @@ from flask_cors import CORS, cross_origin
 
 # FLask SQLAlchemy, Database
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import desc
 
 basedir = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.sqlite')
 
@@ -72,10 +73,11 @@ class FileContent(db.Model):
     userid = db.Column(db.String(64))
     text = db.Column(db.Text)
     entities = db.Column(db.Text)
-    location = db.Column(db.String(64))
+    webquery = db.Column(db.Text)
+    oslog = db.Column(db.String(64))
     pic_date = db.Column(db.DateTime, nullable=False)
     def __repr__(self):
-        return f'Pic Name: {self.name} Data: {self.data} text: {self.text} created on: {self.pic_date} location: {self.location}'
+        return f'Pic Name: {self.name} Data: {self.data} text: {self.text} created on: {self.pic_date} location: {self.oslog}'
 
 
 # Picture table. By default the table name is filecontent
@@ -99,7 +101,7 @@ class RecContent(db.Model):
 @app.route('/')
 def index():
 
-    pics = FileContent.query.all()
+    pics = FileContent.query.order_by(desc(FileContent.id)).all()
     if pics: # This is because when you first run the app, if no pics in the db it will give you an error
         all_pics = pics
         if request.method == 'POST':
@@ -115,7 +117,7 @@ def index():
 @app.route('/query')
 def query():
 
-    all_pics = FileContent.query.all()
+    all_pics = FileContent.query.order_by(desc(FileContent.id)).all()
     return render_template('query.html', all_pic=all_pics)
 
 # Corpus
@@ -139,10 +141,10 @@ def upload():
     data = file.read()
     render_file = render_picture(data)
     text = request.form['text']
-    location = request.form['location']
+    oslog = request.form['location']
     userid = ''
 
-    newFile = FileContent(name=file.filename, data=data, rendered_data=render_file, text=text, location=location, userid=userid, pic_date=datetime.utcnow, entities='{}')
+    newFile = FileContent(name=file.filename, data=data, rendered_data=render_file, text=text, oslog=oslog, userid=userid, pic_date=datetime.utcnow, entities='{}')
     db.session.add(newFile)
     db.session.commit() 
     full_name = newFile.name
@@ -150,7 +152,7 @@ def upload():
     file_name = full_name[0]
     file_type = full_name[1]
     file_date = newFile.pic_date
-    file_location = newFile.location
+    file_location = newFile.oslog
     file_render = newFile.rendered_data
     file_id = newFile.id
     file_text = newFile.text
@@ -165,16 +167,16 @@ def upload_php():
     data = file.read()
     render_file = render_picture(data)
     lang = request.form['lang']
+    oslog = request.form['extra']
+    userid = request.form['username']
+    pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
     # convert screen to text - tesseract
     text = pytesseract.image_to_string(Image.open(file.stream), lang=lang)
     # ibm nlp
     entities = detect_entities(text)
+    webquery = getWebQuery(oslog)
 
-    location = request.form['extra']
-    userid = request.form['username']
-    pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
-
-    newFile = FileContent(name=file.filename.split('/')[-1], data=data, rendered_data=render_file, text=text, location=location, userid=userid, pic_date=pic_date, entities=entities)
+    newFile = FileContent(name=file.filename.split('/')[-1], data=data, rendered_data=render_file, text=text, oslog=oslog, userid=userid, pic_date=pic_date, entities=entities, webquery=webquery)
     db.session.add(newFile)
     db.session.commit() 
 
@@ -197,9 +199,10 @@ def build(user_id):
     file_data = FileContent.query.filter((FileContent.userid == user_id))
     screens = [screen.text for screen in file_data]
     entities = [getEntities(screen.entities) for screen in file_data]
-    apps = [getApp(screen.location) for screen in file_data]
-    docs = [getDoc(screen.location) for screen in file_data]
-    buildCorpus(model_path,screens,entities,apps,docs)
+    apps = [getApp(screen.oslog) for screen in file_data]
+    docs = [getDoc(screen.oslog) for screen in file_data]
+    webqueries = [getWebQuery(screen.oslog) for screen in file_data]
+    buildCorpus(model_path,screens,entities,apps,docs,webqueries)
 
     #create matrix for retrieval
     # Path(os.path.join(model_path,'temp')).rmdir()
@@ -237,7 +240,7 @@ def update(pic_id):
     pic = FileContent.query.get(pic_id)
 
     if request.method == 'POST':
-        pic.location = request.form['location']
+        pic.oslog = request.form['location']
         pic.text = request.form['text']
 
         db.session.commit()
@@ -274,14 +277,14 @@ def predict():
 
     file = request.files['image']
     data = file.read()
-    location = request.form['extra']
+    oslog = request.form['extra']
     userid = request.form['username']
     lang = request.form['lang']
     pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
     og_img = Image.open(file.stream)
 
     # crop in case of ui in the chrome screen
-    if "chrome" in json.loads(location)["appname"].lower():
+    if "chrome" in json.loads(oslog)["appname"].lower():
         f = Image.open(file)
         w,h = f.size
         og_img = f.crop((0, 0, w-300, h))
@@ -295,9 +298,10 @@ def predict():
     text = pytesseract.image_to_string(og_img, lang=lang)
     # ibm nlp
     entities = detect_entities(text)
+    webquery = getWebQuery(oslog)
 
 
-    newFile = FileContent(name=file.filename.split('/')[-1], data=data, rendered_data=render_file, text=text, location=location, userid=userid, pic_date=pic_date, entities=entities)
+    newFile = FileContent(name=file.filename.split('/')[-1], data=data, rendered_data=render_file, text=text, oslog=oslog, userid=userid, pic_date=pic_date, entities=entities, webquery=webquery)
     db.session.add(newFile)
     db.session.commit() 
 
@@ -331,9 +335,10 @@ def predict():
         # print(online_data[-1])
         online_screens = [screen.text for screen in online_data[-2:]]
         online_entities = [getEntities(screen.entities) for screen in online_data[-2:]]
-        online_apps = [getApp(screen.location) for screen in online_data[-2:]]
-        online_docs = [getDoc(screen.location) for screen in online_data[-2:]]
-        fv_online_docs = getOnlineDocs(model_path, online_screens, online_entities, online_apps, online_docs)
+        online_apps = [getApp(screen.oslog) for screen in online_data[-2:]]
+        online_docs = [getDoc(screen.oslog) for screen in online_data[-2:]]
+        online_webqueries = [getWebQuery(screen.oslog) for screen in online_data[-2:]]
+        fv_online_docs = getOnlineDocs(model_path, online_screens, online_entities, online_apps, online_docs, online_webqueries)
         fb_online_docs+= [1 for i in range(len(fv_online_docs))]
 
 
@@ -401,46 +406,57 @@ def predict():
             print('    %d' %sorted_docs_valid[i])
 
 
-    new_recommendations = []
-    for view in range(1, data.num_views):
-        for i in range(min(params["suggestion_count"],data.num_items_per_view[view])):
-            new_recommendations.append(sorted_views_list[view-1][i])
-            if sorted_views_list[view-1][i] not in set(recommended_terms):
-                recommended_terms.append(sorted_views_list[view-1][i])
     #organize the recommentations in the right format
     data_output = {}
     data_output["keywords"] = [(sorted_views_list[0][i],data.feature_names[sorted_views_list[0][i]],
                                 scored_terms[sorted_views_list[0][i]]) for i in range(min(params["suggestion_count"],data.num_items_per_view[1])) ]
+    print("key")
     data_output["applications"] = [(sorted_views_list[1][i],data.feature_names[sorted_views_list[1][i]],
                                     scored_terms[sorted_views_list[1][i]]) for i in range(min(params["suggestion_count"],data.num_items_per_view[2]))]
+    print("app")
     data_output["people"] = [(sorted_views_list[2][i],data.feature_names[sorted_views_list[2][i]],
                                 scored_terms[sorted_views_list[2][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[3]))]
+    print("people")
+
+    data_output["webqueries"] = [(sorted_views_list[3][i],data.feature_names[sorted_views_list[3][i]],
+                                scored_terms[sorted_views_list[3][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[4])) if data.feature_names[sorted_views_list[3][i]] != ""]
+    print("webqueries")
     # TODO: how many document? I can also send the estimated relevance.
     #data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url']) for i in range(params["suggestion_count"])]
     #TODO: THis is the hack to distinguish doc and term IDS. Add 600000 to doc IDs for frontend
     # data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url'],os.path.join(snapshot_directory, "1513349785.60169.jpeg"), loadLOG(sorted_docs_valid[i])['appname']) for i in range(100)]
-    data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].location)['title'],json.loads(docs[sorted_docs_valid[i]].location)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].location)['appname']) for i in range(100)]
-    # data_output["pair_similarity"] = []
-    item_list = list(set(new_recommendations + pinned_item))
-        # an array to hold the feature vectors
-    recommended_fv = np.empty([len(item_list), projector.num_features])
-    for i in range(len(item_list)):
-        recommended_fv[i, :] = projector.item_fv(item_list[i]) #get the feature vector
-    #Compute the dot products
-    sim_matrix = np.dot(recommended_fv, recommended_fv.T)
-    #normalize the dot products
-    sim_diags = np.diagonal(sim_matrix)
-    sim_diags = np.sqrt(sim_diags)
-    for i in range(len(item_list)):
-        sim_matrix[i,:] = sim_matrix[i,:]/sim_diags
-    for i in range(len(item_list)):
-        sim_matrix[:,i] = sim_matrix[:,i]/sim_diags
-    #save pairwise similarities in a list of tuples
-    all_sims = [(item_list[i],item_list[j],sim_matrix[i,j])
-                for i in range(len(item_list)-1) for j in range(i+1,len(item_list))]
-    data_output["pair_similarity"] = all_sims
+    data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname']) for i in range(50)]
+    
+    # either this
+    data_output["pair_similarity"] = []
+    # or this to allow feedback on recs
+    # new_recommendations = []
+    # for view in range(1, data.num_views):
+    #     for i in range(min(params["suggestion_count"],data.num_items_per_view[view])):
+    #         new_recommendations.append(sorted_views_list[view-1][i])
+    #         if sorted_views_list[view-1][i] not in set(recommended_terms):
+    #             recommended_terms.append(sorted_views_list[view-1][i])
+    #
+    # item_list = list(set(new_recommendations + pinned_item))
+    #     # an array to hold the feature vectors
+    # recommended_fv = np.empty([len(item_list), projector.num_features])
+    # for i in range(len(item_list)):
+    #     recommended_fv[i, :] = projector.item_fv(item_list[i]) #get the feature vector
+    # #Compute the dot products
+    # sim_matrix = np.dot(recommended_fv, recommended_fv.T)
+    # #normalize the dot products
+    # sim_diags = np.diagonal(sim_matrix)
+    # sim_diags = np.sqrt(sim_diags)
+    # for i in range(len(item_list)):
+    #     sim_matrix[i,:] = sim_matrix[i,:]/sim_diags
+    # for i in range(len(item_list)):
+    #     sim_matrix[:,i] = sim_matrix[:,i]/sim_diags
+    # #save pairwise similarities in a list of tuples
+    # all_sims = [(item_list[i],item_list[j],sim_matrix[i,j])
+    #             for i in range(len(item_list)-1) for j in range(i+1,len(item_list))]
+    # data_output["pair_similarity"] = all_sims
 
-
+    print("prepared recs")
     newRec = RecContent(userid=userid, text=json.dumps(data_output))
     db.session.add(newRec)
     db.session.commit() 

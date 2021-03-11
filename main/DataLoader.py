@@ -79,11 +79,18 @@ class DataLoader:
         People_ids = [(sorted_IDs[i]) for i in range(self.num_features) \
                     if  self.views_ind[sorted_IDs[i]] == 3]
 
+        Query_names = [(self.feature_names[sorted_IDs[i]]) for i in range(self.num_features) \
+                    if  self.views_ind[sorted_IDs[i]] == 4]
+        Query_ids = [(sorted_IDs[i]) for i in range(self.num_features) \
+                    if  self.views_ind[sorted_IDs[i]] == 4]
+
         num_to_show = 1000 #
         data = {}
         data["AP_names"] = AP_names[:num_to_show]
         data["KW_names"] = KW_names[:num_to_show]
         data["People_names"] = People_names[:num_to_show]
+        data["Query_names"] = Query_names[:num_to_show]
         data["AP_ids"] = AP_ids[:num_to_show]
         data["KW_ids"] = KW_ids[:num_to_show]
         data["People_ids"] = People_ids[:num_to_show]
+        data["Query_ids"] = Query_ids[:num_to_show]
