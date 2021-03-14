@@ -50,7 +50,7 @@ params = {
     # Number of iterations of the simulated study
     "num_iterations": 50,
     # Number of latent dimensions for data representation
-    "num_latent_dims": 50,
+    "num_latent_dims": 100,
     # Number of runs (only for the simulated study, set to 1 for real data setting)
     "num_runs": 1,  # NOT IMPLEMENTED YET
     # True: prepare the data for UI but have the interaction in the terminal
@@ -110,7 +110,6 @@ def detect_entities(mytext):
             print('Failed to request: '+ str(e))
             if 'unsupported text language' in str(e) or 'unknown language detected' in str(e) or 'Code: 400' in str(e):
                 break
-            return '{}'
     return '{}'
 
 if __name__ == '__main__':
@@ -190,7 +189,7 @@ def buildCorpus(model_path, screens, entities, apps, docs, webqueries):
 	corpus.dictionary = gensim.corpora.Dictionary.load(dict_path, mmap=None)
 	dictionary_view = {}
 	entity_view = []
-	print(entities)
+	# print(entities)
 	for e in entities:
 		entity_view+= e
 	for entity_id in corpus.dictionary.doc2bow(entity_view):
@@ -207,7 +206,7 @@ def buildCorpus(model_path, screens, entities, apps, docs, webqueries):
 			feature_names.append(dictionary_view[i])
 		else:
 			feature_names.append(0)
-	print(feature_names)
+	# print(feature_names)
 	np.save(os.path.join(model_path,'views_ind_1.npy'),feature_names)
 def getOnlineDocs(model_path, screens, entities, apps, docs, webqueries):
 	dict_path = os.path.join(model_path,'dictionary.dict')
@@ -250,6 +249,8 @@ def getWebQuery(extra_info):
 		query = unquote(url).split('q=')[1].split('&')[0].replace('+','_')
 	return query
 def getEntities(watson):
+	if watson=='':
+		return []
 	detail = json.loads(watson)
 	keywords = []
 	if 'keywords' in detail:

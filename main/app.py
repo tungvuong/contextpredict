@@ -24,7 +24,7 @@ from .Utils import *
 
 # Tesseract
 import pytesseract
-from PIL import Image
+from PIL import Image, ImageChops
 
 # Gensim
 import gensim
@@ -40,7 +40,7 @@ from flask_cors import CORS, cross_origin
 
 # FLask SQLAlchemy, Database
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import desc
+from sqlalchemy import desc, asc
 
 basedir = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.sqlite')
 
@@ -101,7 +101,7 @@ class RecContent(db.Model):
 @app.route('/')
 def index():
 
-    pics = FileContent.query.order_by(desc(FileContent.id)).all()
+    pics = FileContent.query.order_by(desc(FileContent.pic_date)).all()
     if pics: # This is because when you first run the app, if no pics in the db it will give you an error
         all_pics = pics
         if request.method == 'POST':
@@ -117,7 +117,7 @@ def index():
 @app.route('/query')
 def query():
 
-    all_pics = FileContent.query.order_by(desc(FileContent.id)).all()
+    all_pics = FileContent.query.order_by(desc(FileContent.pic_date)).all()
     return render_template('query.html', all_pic=all_pics)
 
 # Corpus
@@ -170,10 +170,38 @@ def upload_php():
     oslog = request.form['extra']
     userid = request.form['username']
     pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
+    # most recent frame
+    docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+    curr = Image.open(BytesIO(data))
+    prev = None
+    change = None
+    isChange = True
+    # if sql result is not empty
+    if docs.count()>0:
+        prev = Image.open(BytesIO(docs[-1].data))
+        # if user use the same app --> otherwise user switch app and we run ocr on the entire screen
+        if (curr.size == prev.size):
+            # only change is extracted
+            diff = ImageChops.difference(curr, prev)
+            # if there is change, we crop the curr screen to change --> otherwise, no change at all really.
+            if (diff.getbbox()):
+                print(userid, 'information change', diff.getbbox())
+                change = curr.crop((diff.getbbox()))
+            else:
+                print(userid, 'no change')
+                isChange = False
+        else:
+            print(userid, 'switch app or window size different')
+
     # convert screen to text - tesseract
-    text = pytesseract.image_to_string(Image.open(file.stream), lang=lang)
-    # ibm nlp
-    entities = detect_entities(text)
+    text = ''
+    # if there is change, we do ocr
+    if isChange:
+        text = pytesseract.image_to_string(change, lang=lang) if change else pytesseract.image_to_string(Image.open(file.stream), lang=lang)
+        text = text.strip()
+
+    # ibm nlp only there is information change
+    entities = detect_entities(text) if text!='' else '{}'
     webquery = getWebQuery(oslog)
 
     newFile = FileContent(name=file.filename.split('/')[-1], data=data, rendered_data=render_file, text=text, oslog=oslog, userid=userid, pic_date=pic_date, entities=entities, webquery=webquery)
@@ -196,12 +224,12 @@ def download(pic_id):
 def build(user_id):
     model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+user_id)
     Path(model_path).mkdir(parents=True, exist_ok=True)
-    file_data = FileContent.query.filter((FileContent.userid == user_id))
-    screens = [screen.text for screen in file_data]
-    entities = [getEntities(screen.entities) for screen in file_data]
-    apps = [getApp(screen.oslog) for screen in file_data]
-    docs = [getDoc(screen.oslog) for screen in file_data]
-    webqueries = [getWebQuery(screen.oslog) for screen in file_data]
+    file_data = FileContent.query.filter((FileContent.userid == user_id)).order_by(asc(FileContent.pic_date))
+    screens = [screen.text for screen in file_data if screen.text.strip()!='']
+    entities = [getEntities(screen.entities) for screen in file_data if screen.text.strip()!='']
+    apps = [getApp(screen.oslog) for screen in file_data if screen.text.strip()!='']
+    docs = [getDoc(screen.oslog) for screen in file_data if screen.text.strip()!='']
+    webqueries = [getWebQuery(screen.oslog) for screen in file_data if screen.text.strip()!='']
     buildCorpus(model_path,screens,entities,apps,docs,webqueries)
 
     #create matrix for retrieval
@@ -264,14 +292,7 @@ def delete(pic_id):
             return redirect(url_for('index'))
     return redirect(url_for('index'))
 
-
-# Load LDA, regression models
-# data = DataLoader()
-# id2word, corpus, lda_model, recs, num_topic, max_num_recs, reg_model = data.id2word, data.corpus, data.lda_model, data.recs, data.num_topic, data.max_num_recs, data.reg_model
-# num_recs = 1000,
-
-
-
+# lab
 @app.route('/laboratory.php', methods=['POST'])
 def predict():
 
@@ -294,10 +315,44 @@ def predict():
 
     render_file = render_picture(data)
 
+    # most recent frame
+    query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+    docs = [doc for doc in query_docs if doc.text.strip()!='']
+
+    curr = Image.open(BytesIO(data))
+    prev = None
+    change = None
+    isChange = True
+    # if sql result is not empty
+    # if docs.count()>0:
+    if len(docs)>0:
+        prev = Image.open(BytesIO(docs[-1].data))
+        # if user use the same app --> otherwise user switch app and we run ocr on the entire screen
+        if (curr.size == prev.size):
+            # only change is extracted
+            diff = ImageChops.difference(curr, prev)
+            # if there is change, we crop the curr screen to change --> otherwise, no change at all really.
+            if (diff.getbbox()):
+                print(userid, 'information change', diff.getbbox())
+                change = curr.crop((diff.getbbox()))
+            else:
+                print(userid, 'no change')
+                isChange = False
+        else:
+            print(userid, 'switch app or window size different')
+
     # convert screen to text - tesseract
-    text = pytesseract.image_to_string(og_img, lang=lang)
-    # ibm nlp
-    entities = detect_entities(text)
+    text = ''
+    # if there is change, we do ocr
+    if isChange:
+        text = pytesseract.image_to_string(change, lang=lang) if change else pytesseract.image_to_string(Image.open(file.stream), lang=lang)
+        text = text.strip()
+    else:
+        print(userid, 'dont upload')
+        return "file uploaded" 
+
+    # ibm nlp only there is information change
+    entities = detect_entities(text) if text!='' else ''
     webquery = getWebQuery(oslog)
 
 
@@ -306,7 +361,6 @@ def predict():
     db.session.commit() 
 
     # Predict here
-    docs = FileContent.query.filter((FileContent.userid == userid))
     model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
     data = DataLoader(model_path)
     # data.print_info()
@@ -331,13 +385,13 @@ def predict():
         fv_online_docs = []    # considered snapshots generated from realtime user activity
         fb_online_docs = []    # dummy feedback for the newly generated snapshots
 
-        online_data = FileContent.query.filter((FileContent.userid == userid)).order_by(desc(FileContent.id))
+        online_data = docs
         # print(online_data[-1])
-        online_screens = [screen.text for screen in online_data[:2]]
-        online_entities = [getEntities(screen.entities) for screen in online_data[:2]]
-        online_apps = [getApp(screen.oslog) for screen in online_data[:2]]
-        online_docs = [getDoc(screen.oslog) for screen in online_data[:2]]
-        online_webqueries = [getWebQuery(screen.oslog) for screen in online_data[:2]]
+        online_screens = [screen.text for screen in online_data[-2:]]
+        online_entities = [getEntities(screen.entities) for screen in online_data[-2:]]
+        online_apps = [getApp(screen.oslog) for screen in online_data[-2:]]
+        online_docs = [getDoc(screen.oslog) for screen in online_data[-2:]]
+        online_webqueries = [getWebQuery(screen.oslog) for screen in online_data[-2:]]
         fv_online_docs = getOnlineDocs(model_path, online_screens, online_entities, online_apps, online_docs, online_webqueries)
         fb_online_docs+= [1 for i in range(len(fv_online_docs))]
 
@@ -425,7 +479,7 @@ def predict():
     #data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url']) for i in range(params["suggestion_count"])]
     #TODO: THis is the hack to distinguish doc and term IDS. Add 600000 to doc IDs for frontend
     # data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url'],os.path.join(snapshot_directory, "1513349785.60169.jpeg"), loadLOG(sorted_docs_valid[i])['appname']) for i in range(100)]
-    data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname']) for i in range(50)]
+    data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],docs[sorted_docs_valid[i]].text) for i in range(50)]
     
     # either this
     data_output["pair_similarity"] = []
@@ -462,7 +516,7 @@ def predict():
     db.session.commit() 
     return "file uploaded"
 
-# Upload
+# Retrieve docs, webqueries
 @app.route('/retrieve/<path:path>')
 @cross_origin(origin='*',headers=['Content- Type','Authorization'])
 def retrieve(path):
