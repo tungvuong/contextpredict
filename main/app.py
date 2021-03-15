@@ -95,8 +95,9 @@ class LogContent(db.Model):
 
     id = db.Column(db.Integer,  primary_key=True)
     userid = db.Column(db.String(64))
-    text = db.Column(db.Text)
-    click = db.Column(db.Text)
+    rec_id = db.Column(db.String(64))
+    rec_title = db.Column(db.Text)
+    rec_url = db.Column(db.Text)
     log_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     def __repr__(self):
         return f'User: {self.userid} created on: {self.log_date} text: {self.text}'
@@ -219,11 +220,12 @@ def upload_php():
 @app.route('/logclick', methods=['GET', 'POST'])
 def logclick():
 
-    text = request.files['text']
-    click = request.form['click']
+    rec_id = request.files['rec_id']
+    rec_title = request.form['rec_title']
+    rec_url = request.form['rec_url']
     userid = request.form['username']
 
-    newLog = LogContent(text=text, userid=userid, click=click)
+    newLog = LogContent(rec_id=rec_id, rec_title=rec_title, rec_url=rec_url, userid=userid, click=click)
     db.session.add(newLog)
     db.session.commit() 
 
