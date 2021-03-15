@@ -80,14 +80,8 @@ class FileContent(db.Model):
         return f'Pic Name: {self.name} Data: {self.data} text: {self.text} created on: {self.pic_date} location: {self.oslog}'
 
 
-# Picture table. By default the table name is filecontent
+# Rec table.
 class RecContent(db.Model):
-
-    """ 
-    The first time the app runs you need to create the table. In Python
-    terminal import db, Then run db.create_all()
-    """
-    """ ___tablename__ = 'yourchoice' """ # You can override the default table name
 
     id = db.Column(db.Integer,  primary_key=True)
     userid = db.Column(db.String(64))
@@ -95,6 +89,17 @@ class RecContent(db.Model):
     rec_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     def __repr__(self):
         return f'User: {self.userid} created on: {self.rec_date} text: {self.text}'
+
+# Rec table.
+class LogContent(db.Model):
+
+    id = db.Column(db.Integer,  primary_key=True)
+    userid = db.Column(db.String(64))
+    text = db.Column(db.Text)
+    click = db.Column(db.Text)
+    log_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    def __repr__(self):
+        return f'User: {self.userid} created on: {self.log_date} text: {self.text}'
 
 # Index
 @app.route('/index', methods=['GET', 'POST'])
@@ -159,7 +164,7 @@ def upload():
 
     return render_template('upload.html', file_name=file_name, file_type=file_type, file_date=file_date, file_location=file_location, file_render=file_render, file_id=file_id, file_text=file_text)
 
-
+# upload screens
 @app.route('/upload.php', methods=['POST'])
 def upload_php():
 
@@ -210,6 +215,19 @@ def upload_php():
 
     return "file uploaded"
 
+# log clicks
+@app.route('/logclick', methods=['GET', 'POST'])
+def logclick():
+
+    text = request.files['text']
+    click = request.form['click']
+    userid = request.form['username']
+
+    newLog = LogContent(text=text, userid=userid, click=click)
+    db.session.add(newLog)
+    db.session.commit() 
+
+    return "logged"
 
 # Download
 @app.route('/download/<int:pic_id>')
