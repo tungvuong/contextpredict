@@ -17,10 +17,10 @@ import shutil
 
 # Utility
 # comment this when running python3 create_db.py
-from .DataLoader import DataLoader
-from .DataProjector import DataProjector
-from .UserModelCoupled import UserModelCoupled
-from .Utils import *
+# from .DataLoader import DataLoader
+# from .DataProjector import DataProjector
+# from .UserModelCoupled import UserModelCoupled
+# from .Utils import *
 
 # Tesseract
 import pytesseract
@@ -100,7 +100,7 @@ class LogContent(db.Model):
     rec_url = db.Column(db.Text)
     log_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     def __repr__(self):
-        return f'User: {self.userid} created on: {self.log_date} text: {self.text}'
+        return f'User: {self.rec_id} created on: {self.log_date} text: {self.rec_title}'
 
 # Index
 @app.route('/index', methods=['GET', 'POST'])
@@ -220,16 +220,23 @@ def upload_php():
 @app.route('/logclick', methods=['GET', 'POST'])
 def logclick():
 
-    rec_id = request.files['rec_id']
+    rec_id = request.form['rec_id']
     rec_title = request.form['rec_title']
     rec_url = request.form['rec_url']
-    userid = request.form['username']
+    userid = request.form['userid']
 
-    newLog = LogContent(rec_id=rec_id, rec_title=rec_title, rec_url=rec_url, userid=userid, click=click)
+    newLog = LogContent(rec_id=rec_id, rec_title=rec_title, rec_url=rec_url, userid=userid)
     db.session.add(newLog)
     db.session.commit() 
 
     return "logged"
+
+# get logclick
+@app.route('/getlogclick')
+def getlogclick():
+
+    all_logs = LogContent.query.order_by(asc(LogContent.log_date)).all()
+    return all_logs[-1].rec_title
 
 # Download
 @app.route('/download/<int:pic_id>')
