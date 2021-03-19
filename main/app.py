@@ -17,10 +17,10 @@ import shutil
 
 # Utility
 # comment this when running python3 create_db.py
-# from .DataLoader import DataLoader
-# from .DataProjector import DataProjector
-# from .UserModelCoupled import UserModelCoupled
-# from .Utils import *
+from .DataLoader import DataLoader
+from .DataProjector import DataProjector
+from .UserModelCoupled import UserModelCoupled
+from .Utils import *
 
 # Tesseract
 import pytesseract
@@ -115,7 +115,7 @@ def index():
             flash('Upload succesful!')
             return redirect(url_for('upload'))  
 
-        return render_template('index.html', all_pic=all_pics)
+        return render_template('index.html', all_pic=all_pics[:10])
     else:
         return render_template('index.html')
 
@@ -124,7 +124,7 @@ def index():
 def query():
 
     all_pics = FileContent.query.order_by(desc(FileContent.pic_date)).all()
-    return render_template('query.html', all_pic=all_pics)
+    return render_template('query.html', all_pic=all_pics[:10])
 
 # Corpus
 @app.route('/corpus')
@@ -169,12 +169,12 @@ def upload():
 @app.route('/upload.php', methods=['POST'])
 def upload_php():
 
-    file = request.files['image']
-    data = file.read()
-    render_file = render_picture(data)
     lang = request.form['lang']
     oslog = request.form['extra']
     userid = request.form['username']
+    file = request.files['image']
+    data = file.read()
+    render_file = render_picture(data)
     pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
     # most recent frame
     docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
@@ -542,14 +542,17 @@ def predict():
     db.session.add(newRec)
     db.session.commit() 
     return "file uploaded"
+# lab
+@app.route('/checklicenseid.php', methods=['POST'])
+def licenseid():
+    return 'successful'
 
 # Retrieve docs, webqueries
 @app.route('/retrieve/<path:path>')
 @cross_origin(origin='*',headers=['Content- Type','Authorization'])
 def retrieve(path):
     # userid = 'C1MR3058G940'
-    # userid = request.form['username']
-    all_recs = RecContent.query.filter_by(userid=path)
+    all_recs = RecContent.query.filter_by(userid=path).order_by(asc(RecContent.rec_date))
     return json.dumps(json.loads(all_recs[-1].text))
 
 # UI
