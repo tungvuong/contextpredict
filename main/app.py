@@ -52,7 +52,7 @@ app.config['SECRET_KEY'] = 'dev'
 app.config["DEBUG"] = True
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-cors = CORS(app, resources={r"/retrieve": {"origins": "*"}})
+cors = CORS(app, resources={r"/retrieve": {"origins": "*"}, r"/logclick": {"origins": "*"}})
 db = SQLAlchemy(app)
 
 
