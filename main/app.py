@@ -11,7 +11,7 @@ from datetime import datetime
 from base64 import b64encode
 import base64
 from io import BytesIO #Converts data from Database into bytes
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 import shutil
 
@@ -554,6 +554,122 @@ def retrieve(path):
     # userid = 'C1MR3058G940'
     all_recs = RecContent.query.filter_by(userid=path).order_by(asc(RecContent.rec_date))
     return json.dumps(json.loads(all_recs[-1].text))
+
+# Retrieve docs, webqueries
+@app.route('/csv/<path:path>')
+@cross_origin(origin='*',headers=['Content- Type','Authorization'])
+def csv(path):
+    now = datetime.utcnow()
+    rounded = now - timedelta(minutes=15)
+    all_recs = RecContent.query.filter_by(userid=path).filter(RecContent.rec_date >= rounded).order_by(asc(RecContent.rec_date))
+    print(rounded, now)
+    r_docs = defaultdict(int)
+    r_queries = defaultdict(int)
+    r_kw = defaultdict(int)
+    r_app = defaultdict(int)
+    for rec in all_recs:
+        entity = json.loads(rec.text)
+        for info in entity['document_ID']:
+            try:
+                r_docs[info[1]+' '+info[2]] +=1
+            except:
+                pass
+        for info in entity['webqueries']:
+            try:
+                r_queries[info[1]] +=1
+            except:
+                pass
+        for info in entity['keywords']:
+            try:
+                r_kw[info[1]] +=1
+            except:
+                pass
+        for info in entity['applications']:
+            try:
+                r_app[info[1]] +=1
+            except:
+                pass
+
+
+    # on the screen
+    sr_docs = defaultdict(int)
+    sr_queries = defaultdict(int)
+    sr_kw = defaultdict(int)
+    sr_app = defaultdict(int)
+
+    file_data = FileContent.query.filter((FileContent.userid == path)).filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
+    #screens = [screen.text for screen in file_data if screen.text.strip()!='']
+    entities = [getEntities(screen.entities) for screen in file_data if screen.text.strip()!='']
+    apps = [getApp(screen.oslog) for screen in file_data if screen.text.strip()!='']
+    docs = [getDoc(screen.oslog)+' '+json.loads(screen.oslog)['url'] for screen in file_data if screen.text.strip()!='']
+    webqueries = [getWebQuery(screen.oslog) for screen in file_data if screen.text.strip()!='']
+
+    for info in entities:
+        if len(sr_kw)>=len(r_kw):
+            break
+        for _kw in info:
+            if len(sr_kw)>=len(r_kw):
+                break
+            try:
+                if _kw.strip()!='':
+                    sr_kw[_kw] +=1
+            except:
+                pass
+    for info in apps:
+        if len(sr_app)>=len(r_app):
+            break
+        try:
+            if info.strip()!='':
+                sr_app[info] +=1
+        except:
+            pass
+    for info in docs:
+        if len(sr_docs)>=len(r_docs):
+            break
+        try:
+            if info.strip()!='':
+                sr_docs[info] +=1
+        except:
+            pass
+    for info in webqueries:
+        if len(sr_queries)>=len(r_queries):
+            break
+        try:
+            if info.strip()!='':
+                sr_queries[info] +=1
+        except:
+            pass
+
+    f_docs = {**r_docs, **sr_docs}
+    f_app = {**r_app, **sr_app}
+    f_queries = {**r_queries, **sr_queries}
+    f_kw = {**r_kw, **sr_kw}
+
+    f_docs = dict(sorted(f_docs.items()))
+    f_queries = dict(sorted(f_queries.items()))
+    f_kw = dict(sorted(f_kw.items()))
+    f_app = dict(sorted(f_app.items()))
+
+    csv = 'Name,Relevance\n'
+    csv += '---- DOCUMENT ----,\n'
+    for info, value in f_docs.items():
+        csv+=(info+",\n")
+    csv += '---- WEB QUERIES ----,\n'
+    for info, value in f_queries.items():
+        csv+=(info+",\n")
+    csv += '---- KEYWORDS ----,\n'
+    for info, value in f_kw.items():
+        csv+=(info+",\n")
+    csv += '---- APPLICATIONS ----,\n'
+    for info, value in f_app.items():
+        csv+=(info+",\n")
+
+    return Response(
+        csv,
+        mimetype="text/csv",
+        headers={"Content-disposition":
+                 "attachment; filename=rate.csv"})
+
 
 # UI
 # @app.route('/ui', methods=['GET', 'POST'])
