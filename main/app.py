@@ -335,7 +335,7 @@ def predict():
     if "chrome" in json.loads(oslog)["appname"].lower():
         f = Image.open(file)
         w,h = f.size
-        og_img = f.crop((0, 0, w-300, h))
+        og_img = f.crop((0, 0, w, h-300))
         buffered = BytesIO()
         og_img.save(buffered, format="JPEG")
         data = buffered.getvalue()
