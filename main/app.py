@@ -415,13 +415,13 @@ def predict():
         fv_online_docs = []    # considered snapshots generated from realtime user activity
         fb_online_docs = []    # dummy feedback for the newly generated snapshots
 
-        online_data = list(reversed(docs))
+        online_data = docs
         # print(online_data[-1])
-        online_screens = [screen.text for screen in online_data[:2]]
-        online_entities = [getEntities(screen.entities) for screen in online_data[:2]]
-        online_apps = [getApp(screen.oslog) for screen in online_data[:2]]
-        online_docs = [getDoc(screen.oslog) for screen in online_data[:2]]
-        online_webqueries = [getWebQuery(screen.oslog) for screen in online_data[:2]]
+        online_screens = [screen.text for screen in online_data[-2:]]
+        online_entities = [getEntities(screen.entities) for screen in online_data[-2:]]
+        online_apps = [getApp(screen.oslog) for screen in online_data[-2:]]
+        online_docs = [getDoc(screen.oslog) for screen in online_data[-2:]]
+        online_webqueries = [getWebQuery(screen.oslog) for screen in online_data[-2:]]
         fv_online_docs = getOnlineDocs(model_path, online_screens, online_entities, online_apps, online_docs, online_webqueries)
         fb_online_docs+= [1 for i in range(len(fv_online_docs))]
 
@@ -515,7 +515,7 @@ def predict():
     data_output["pair_similarity"] = []
 
     # input docs
-    data_output["recent_docs"] = [(getApp(screen.oslog),getDoc(screen.oslog)) for screen in list(reversed(docs))[:2]]
+    data_output["recent_docs"] = [(getApp(screen.oslog),getDoc(screen.oslog)) for screen in docs[-2:]]
     # or this to allow feedback on recs
     # new_recommendations = []
     # for view in range(1, data.num_views):
