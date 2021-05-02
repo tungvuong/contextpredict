@@ -515,7 +515,7 @@ def predict():
     data_output["pair_similarity"] = []
 
     # input docs
-    data_output["recent_docs"] = [(json.loads(screen.oslog)['url'],getDoc(screen.oslog)) for screen in docs[-2:]]
+    data_output["recent_docs"] = list(set([(json.loads(screen.oslog)['url'],getDoc(screen.oslog)) for screen in docs[-2:]]))
     # or this to allow feedback on recs
     # new_recommendations = []
     # for view in range(1, data.num_views):
