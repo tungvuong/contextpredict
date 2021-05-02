@@ -388,6 +388,9 @@ def predict():
     db.session.commit() 
 
     # Predict here
+    # get again most recent frame
+    query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+    docs = [doc for doc in query_docs if doc.text.strip()!='']
     model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
     data = DataLoader(model_path)
     # data.print_info()
