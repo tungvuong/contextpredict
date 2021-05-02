@@ -510,6 +510,9 @@ def predict():
     
     # either this
     data_output["pair_similarity"] = []
+
+    # input docs
+    data_output["recent_docs"] = [(getApp(screen.oslog),getDoc(screen.oslog)) for screen in online_data[-2:]]
     # or this to allow feedback on recs
     # new_recommendations = []
     # for view in range(1, data.num_views):
