@@ -412,7 +412,7 @@ def predict():
         fv_online_docs = []    # considered snapshots generated from realtime user activity
         fb_online_docs = []    # dummy feedback for the newly generated snapshots
 
-        online_data = reversed(docs)
+        online_data = list(reversed(docs))
         # print(online_data[-1])
         online_screens = [screen.text for screen in online_data[:2]]
         online_entities = [getEntities(screen.entities) for screen in online_data[:2]]
@@ -512,7 +512,7 @@ def predict():
     data_output["pair_similarity"] = []
 
     # input docs
-    data_output["recent_docs"] = [(getApp(screen.oslog),getDoc(screen.oslog)) for screen in reversed(docs)[:2]]
+    data_output["recent_docs"] = [(getApp(screen.oslog),getDoc(screen.oslog)) for screen in list(reversed(docs))[:2]]
     # or this to allow feedback on recs
     # new_recommendations = []
     # for view in range(1, data.num_views):
