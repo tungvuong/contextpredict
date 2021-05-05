@@ -274,7 +274,7 @@ def getEntities(watson):
 
 def convertToText(change, lang):
 	target_url = "https://vision.googleapis.com/v1/images:annotate?key=AIzaSyDXBo-XUHlHHTN4xefvO9DmLZzCSHLhLCM"
-	encoded_string = base64.b64encode(change).decode("utf8")
+	encoded_string = base64.b64encode(change.read()).decode("utf8")
 
 	request_data = {"requests":[{"features": [{"type": "TEXT_DETECTION"}], "image": {"content": encoded_string}}]}
 	r = requests.post(target_url, data=json.dumps(request_data))
