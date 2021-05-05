@@ -271,7 +271,7 @@ def getEntities(watson):
 
 def convertToText(change, lang):
 	detectText = pytesseract.image_to_string(change, lang=lang)
-	print(detectText)
+	# print(detectText)
 	return detectText
 
 # def convertToText(change, lang):
