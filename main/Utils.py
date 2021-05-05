@@ -269,34 +269,34 @@ def getEntities(watson):
 			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>3 else []
 	return keywords
 
-# def convertToText(change, lang):
-# 	detectText = pytesseract.image_to_string(change, lang=lang)
-# 	print(detectText)
-# 	return detectText
-
 def convertToText(change, lang):
-	target_url = "https://vision.googleapis.com/v1/images:annotate?key=AIzaSyDXBo-XUHlHHTN4xefvO9DmLZzCSHLhLCM"
-	buffered = BytesIO()
-	change.save(buffered, format="JPEG")
-	encoded_string = base64.b64encode(buffered.getvalue()).decode("utf8")
-	#encoded_string = base64.b64encode(change.read()).decode("utf8")
-
-	request_data = {"requests":[{"features": [{"type": "TEXT_DETECTION"}], "image": {"content": encoded_string}}]}
-	r = requests.post(target_url, data=json.dumps(request_data))
-	print(r.status_code, r.reason)
-
-	response = json.loads(r.text.encode("utf-8").strip())
-
-	detectText = ''
-	if 'responses' in response and'textAnnotations' in response['responses'][0]:
-		texts = response['responses'][0]['textAnnotations']
-		detectText = texts[0]['description']
-		locale = texts[0]['locale']
-		# writeToFile(json.dumps(response), outPath.replace("converted","google"))
-		# if locale!="en" and locale!="fr" and locale!="de" and locale!="it" and locale!="ja" and locale!="ko":
-		#     detect_entities_ibm(translate_text(detectText.encode('utf8').strip(), outPath, locale), outPath)
-		# else:
-		#     print("2) TRANSLATION IGNORED! THIS IS ENGLISH!")
-		#     detect_entities_ibm(detectText, outPath)
+	detectText = pytesseract.image_to_string(change, lang=lang)
 	print(detectText)
 	return detectText
+
+# def convertToText(change, lang):
+# 	target_url = "https://vision.googleapis.com/v1/images:annotate?key=AIzaSyDXBo-XUHlHHTN4xefvO9DmLZzCSHLhLCM"
+# 	buffered = BytesIO()
+# 	change.save(buffered, format="JPEG")
+# 	encoded_string = base64.b64encode(buffered.getvalue()).decode("utf8")
+# 	#encoded_string = base64.b64encode(change.read()).decode("utf8")
+
+# 	request_data = {"requests":[{"features": [{"type": "TEXT_DETECTION"}], "image": {"content": encoded_string}}]}
+# 	r = requests.post(target_url, data=json.dumps(request_data))
+# 	print(r.status_code, r.reason)
+
+# 	response = json.loads(r.text.encode("utf-8").strip())
+
+# 	detectText = ''
+# 	if 'responses' in response and'textAnnotations' in response['responses'][0]:
+# 		texts = response['responses'][0]['textAnnotations']
+# 		detectText = texts[0]['description']
+# 		locale = texts[0]['locale']
+# 		# writeToFile(json.dumps(response), outPath.replace("converted","google"))
+# 		# if locale!="en" and locale!="fr" and locale!="de" and locale!="it" and locale!="ja" and locale!="ko":
+# 		#     detect_entities_ibm(translate_text(detectText.encode('utf8').strip(), outPath, locale), outPath)
+# 		# else:
+# 		#     print("2) TRANSLATION IGNORED! THIS IS ENGLISH!")
+# 		#     detect_entities_ibm(detectText, outPath)
+# 	print(detectText)
+# 	return detectText
