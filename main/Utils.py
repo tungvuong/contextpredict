@@ -6,6 +6,7 @@ import io
 import sys
 import pickle
 import itertools
+import base64
 
 from collections import defaultdict
 from datetime import datetime
