@@ -23,8 +23,8 @@ from .UserModelCoupled import UserModelCoupled
 from .Utils import *
 
 # Tesseract
-import pytesseract
-from PIL import Image, ImageChops
+# import pytesseract
+# from PIL import Image, ImageChops
 
 # Gensim
 import gensim
@@ -203,7 +203,7 @@ def upload_php():
     text = ''
     # if there is change, we do ocr
     if isChange:
-        text = pytesseract.image_to_string(change, lang=lang) if change else pytesseract.image_to_string(Image.open(file.stream), lang=lang)
+        text = convertToText(change, lang=lang) if change else convertToText(Image.open(file.stream), lang=lang)
         text = text.strip()
 
     # ibm nlp only there is information change
@@ -372,7 +372,7 @@ def predict():
     text = ''
     # if there is change, we do ocr
     if isChange:
-        text = pytesseract.image_to_string(change, lang=lang) if change else pytesseract.image_to_string(Image.open(file.stream), lang=lang)
+        text = convertToText(change, lang=lang) if change else convertToText(Image.open(file.stream), lang=lang)
         text = text.strip()
     else:
         print(userid, 'dont upload')
