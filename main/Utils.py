@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import json
 import io
+import requests
 import sys
 import pickle
 import itertools
