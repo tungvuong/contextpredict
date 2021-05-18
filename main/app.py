@@ -186,7 +186,7 @@ def upload_php():
         # most recent frame
         # docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
         now = datetime.utcnow()
-        rounded = now - timedelta(minutes=60)
+        rounded = pic_date - timedelta(minutes=30)
         docs = FileContent.query.filter_by(userid=userid).filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
         curr = Image.open(BytesIO(data))
         prev = None
@@ -361,7 +361,7 @@ def predict():
         # most recent frame
         # query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
         now = datetime.utcnow()
-        rounded = now - timedelta(minutes=(60*24*1))
+        rounded = pic_date - timedelta(minutes=30)
         query_docs = FileContent.query.filter_by(userid=userid).filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
         docs = [doc for doc in query_docs if doc.text.strip()!='']
 
@@ -410,7 +410,7 @@ def predict():
         # get again most recent frame
         # query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
         now = datetime.utcnow()
-        rounded = now - timedelta(seconds=30)
+        rounded = pic_date - timedelta(seconds=30)
         query_docs = FileContent.query.filter_by(userid=userid).filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
         docs = [doc for doc in query_docs if doc.text.strip()!='']
         model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
