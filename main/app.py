@@ -108,8 +108,8 @@ class LogContent(db.Model):
 def index():
 
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=60*24*4+60*7)
-    pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
+    rounded = now - timedelta(minutes=60*24*4+60*10)
+    pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
 
     #pics = FileContent.query.filter((FileContent.userid == "FA3441DEC434")).order_by(desc(FileContent.pic_date)).limit(20)
     if pics: # This is because when you first run the app, if no pics in the db it will give you an error
