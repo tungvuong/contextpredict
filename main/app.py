@@ -108,7 +108,7 @@ class LogContent(db.Model):
 def index():
 
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=(60*24*4)+(60*10))
+    rounded = now - timedelta(minutes=(60*24*4)+(60*7))
     pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
 
     #pics = FileContent.query.filter((FileContent.userid == "FA3441DEC434")).order_by(desc(FileContent.pic_date)).limit(20)
@@ -127,7 +127,7 @@ def index():
 @app.route('/query')
 def query():
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=(60*24*4)+(60*10))
+    rounded = now - timedelta(minutes=(60*24*4)+(60*7))
     all_pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
 
     #all_pics = FileContent.query.order_by(desc(FileContent.pic_date)).limit(20)
