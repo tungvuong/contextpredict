@@ -108,10 +108,10 @@ class LogContent(db.Model):
 def index():
 
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=(60*24*3)+(60*0))
-    pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
+    rounded = now - timedelta(minutes=(60*24*1)+(60*0))
+    pics = FileContent.query.filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
+    # pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
 
-    #pics = FileContent.query.filter((FileContent.userid == "FA3441DEC434")).order_by(desc(FileContent.pic_date)).limit(20)
     if pics: # This is because when you first run the app, if no pics in the db it will give you an error
         all_pics = pics
         if request.method == 'POST':
@@ -119,7 +119,7 @@ def index():
             flash('Upload succesful!')
             return redirect(url_for('upload'))  
 
-        return render_template('index.html', all_pic=all_pics)
+        return render_template('index.html', all_pic=all_pics[:10])
     else:
         return render_template('index.html')
 
@@ -127,11 +127,11 @@ def index():
 @app.route('/query')
 def query():
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=(60*24*3)+(60*0))
-    all_pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
+    rounded = now - timedelta(minutes=(60*24*1)+(60*0))
+    all_pics = FileContent.query.filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
+    # all_pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
 
-    #all_pics = FileContent.query.order_by(desc(FileContent.pic_date)).limit(20)
-    return render_template('query.html', all_pic=all_pics)
+    return render_template('query.html', all_pic=all_pics[:10])
 
 # Corpus
 @app.route('/corpus')
@@ -184,7 +184,10 @@ def upload_php():
         render_file = render_picture(data)
         pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
         # most recent frame
-        docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+        # docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+        now = datetime.utcnow()
+        rounded = now - timedelta(minutes=60)
+        docs = FileContent.query.filter_by(userid=userid).filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
         curr = Image.open(BytesIO(data))
         prev = None
         change = None
@@ -356,7 +359,10 @@ def predict():
         render_file = render_picture(data)
 
         # most recent frame
-        query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+        # query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+        now = datetime.utcnow()
+        rounded = now - timedelta(minutes=(60*24*1))
+        query_docs = FileContent.query.filter_by(userid=userid).filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
         docs = [doc for doc in query_docs if doc.text.strip()!='']
 
         curr = Image.open(BytesIO(data))
@@ -402,7 +408,10 @@ def predict():
 
         # Predict here
         # get again most recent frame
-        query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+        # query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+        now = datetime.utcnow()
+        rounded = now - timedelta(seconds=30)
+        query_docs = FileContent.query.filter_by(userid=userid).filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
         docs = [doc for doc in query_docs if doc.text.strip()!='']
         model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
         data = DataLoader(model_path)
