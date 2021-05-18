@@ -107,7 +107,7 @@ class LogContent(db.Model):
 @app.route('/')
 def index():
 
-    pics = FileContent.query.filter((FileContent.userid == "FA3441DEC434")).order_by(desc(FileContent.pic_date)).all()
+    pics = FileContent.query.filter((FileContent.userid == "FA3441DEC434")).order_by(desc(FileContent.pic_date)).limit(20)
     if pics: # This is because when you first run the app, if no pics in the db it will give you an error
         all_pics = pics
         if request.method == 'POST':
@@ -123,7 +123,7 @@ def index():
 @app.route('/query')
 def query():
 
-    all_pics = FileContent.query.order_by(asc(FileContent.pic_date)).all()
+    all_pics = FileContent.query.order_by(desc(FileContent.pic_date)).limit(20)
     return render_template('query.html', all_pic=all_pics[:10])
 
 # Corpus
