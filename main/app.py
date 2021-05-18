@@ -108,7 +108,7 @@ class LogContent(db.Model):
 def index():
 
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=60*24*4+60*10)
+    rounded = now - timedelta(minutes=(60*24*4)+(60*10))
     pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
 
     #pics = FileContent.query.filter((FileContent.userid == "FA3441DEC434")).order_by(desc(FileContent.pic_date)).limit(20)
@@ -119,7 +119,7 @@ def index():
             flash('Upload succesful!')
             return redirect(url_for('upload'))  
 
-        return render_template('index.html', all_pic=all_pics[:10])
+        return render_template('index.html', all_pic=all_pics)
     else:
         return render_template('index.html')
 
@@ -127,11 +127,11 @@ def index():
 @app.route('/query')
 def query():
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=60*24*4+60*10)
+    rounded = now - timedelta(minutes=(60*24*4)+(60*10))
     all_pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
 
     #all_pics = FileContent.query.order_by(desc(FileContent.pic_date)).limit(20)
-    return render_template('query.html', all_pic=all_pics[:10])
+    return render_template('query.html', all_pic=all_pics)
 
 # Corpus
 @app.route('/corpus')
