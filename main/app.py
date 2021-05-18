@@ -108,7 +108,7 @@ class LogContent(db.Model):
 def index():
 
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=10)
+    rounded = now - timedelta(minutes=60*24*4+60*7)
     pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
 
     #pics = FileContent.query.filter((FileContent.userid == "FA3441DEC434")).order_by(desc(FileContent.pic_date)).limit(20)
