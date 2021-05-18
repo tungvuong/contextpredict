@@ -127,7 +127,7 @@ def index():
 @app.route('/query')
 def query():
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=(60*24*3)+(60*0))
+    rounded = now - timedelta(minutes=(60*24*4)+(60*0))
     # all_pics = FileContent.query.filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
     all_pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
 
