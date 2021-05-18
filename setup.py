@@ -18,7 +18,8 @@ requires = [
     'flask-migrate',
     'pytesseract',
     'Pillow',
-    'ibm-watson'
+    'ibm-watson',
+    'gunicorn'
 ]
 
 setup(
