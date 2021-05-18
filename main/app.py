@@ -107,11 +107,7 @@ class LogContent(db.Model):
 @app.route('/')
 def index():
 
-<<<<<<< HEAD
     pics = FileContent.query.filter((FileContent.userid == "FA3441DEC434")).order_by(desc(FileContent.pic_date)).all()
-=======
-    pics = FileContent.query.order_by(asc(FileContent.pic_date)).all()
->>>>>>> 18e6a9ef82a2a36d17643c367222fa26ebaed310
     if pics: # This is because when you first run the app, if no pics in the db it will give you an error
         all_pics = pics
         if request.method == 'POST':
