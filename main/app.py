@@ -172,75 +172,81 @@ def upload():
 # upload screens
 @app.route('/upload.php', methods=['POST'])
 def upload_php():
-
-    lang = request.form['lang']
-    oslog = request.form['extra']
-    userid = request.form['username']
-    file = request.files['image']
-    data = file.read()
-    render_file = render_picture(data)
-    pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
-    # most recent frame
-    docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
-    curr = Image.open(BytesIO(data))
-    prev = None
-    change = None
-    isChange = True
-    # if sql result is not empty
-    if docs.count()>0:
-        prev = Image.open(BytesIO(docs[-1].data))
-        # if user use the same app --> otherwise user switch app and we run ocr on the entire screen
-        if (curr.size == prev.size):
-            # only change is extracted
-            diff = ImageChops.difference(curr, prev)
-            # if there is change, we crop the curr screen to change --> otherwise, no change at all really.
-            if (diff.getbbox()):
-                print(userid, 'information change', diff.getbbox())
-                change = curr.crop((diff.getbbox()))
+    try:
+        lang = request.form['lang']
+        oslog = request.form['extra']
+        userid = request.form['username']
+        file = request.files['image']
+        data = file.read()
+        render_file = render_picture(data)
+        pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
+        # most recent frame
+        docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+        curr = Image.open(BytesIO(data))
+        prev = None
+        change = None
+        isChange = True
+        # if sql result is not empty
+        if docs.count()>0:
+            prev = Image.open(BytesIO(docs[-1].data))
+            # if user use the same app --> otherwise user switch app and we run ocr on the entire screen
+            if (curr.size == prev.size):
+                # only change is extracted
+                diff = ImageChops.difference(curr, prev)
+                # if there is change, we crop the curr screen to change --> otherwise, no change at all really.
+                if (diff.getbbox()):
+                    print(userid, 'information change', diff.getbbox())
+                    change = curr.crop((diff.getbbox()))
+                else:
+                    print(userid, 'no change')
+                    isChange = False
             else:
-                print(userid, 'no change')
-                isChange = False
-        else:
-            print(userid, 'switch app or window size different')
+                print(userid, 'switch app or window size different')
 
-    # convert screen to text - tesseract
-    text = ''
-    # if there is change, we do ocr
-    if isChange:
-        text = convertToText(change, lang=lang) if change else convertToText(Image.open(file.stream), lang=lang)
-        text = text.strip()
+        # convert screen to text - tesseract
+        text = ''
+        # if there is change, we do ocr
+        if isChange:
+            text = convertToText(change, lang=lang) if change else convertToText(Image.open(file.stream), lang=lang)
+            text = text.strip()
 
-    # ibm nlp only there is information change
-    entities = detect_entities(text) if text!='' else '{}'
-    webquery = getWebQuery(oslog)
+        # ibm nlp only there is information change
+        entities = detect_entities(text) if text!='' else '{}'
+        webquery = getWebQuery(oslog)
 
-    newFile = FileContent(name=file.filename.split('/')[-1], data=data, rendered_data=render_file, text=text, oslog=oslog, userid=userid, pic_date=pic_date, entities=entities, webquery=webquery)
-    db.session.add(newFile)
-    db.session.commit() 
+        newFile = FileContent(name=file.filename.split('/')[-1], data=data, rendered_data=render_file, text=text, oslog=oslog, userid=userid, pic_date=pic_date, entities=entities, webquery=webquery)
+        db.session.add(newFile)
+        db.session.commit() 
 
-    return "file uploaded"
+        return "file uploaded"
+    except:
+        return "upload failed"
 
 # log clicks
 @app.route('/logclick', methods=['GET', 'POST'])
 def logclick():
+    try:
+        rec_id = request.form['rec_id']
+        rec_title = request.form['rec_title']
+        rec_url = request.form['rec_url']
+        userid = request.form['userid']
 
-    rec_id = request.form['rec_id']
-    rec_title = request.form['rec_title']
-    rec_url = request.form['rec_url']
-    userid = request.form['userid']
+        newLog = LogContent(rec_id=rec_id, rec_title=rec_title, rec_url=rec_url, userid=userid)
+        db.session.add(newLog)
+        db.session.commit() 
 
-    newLog = LogContent(rec_id=rec_id, rec_title=rec_title, rec_url=rec_url, userid=userid)
-    db.session.add(newLog)
-    db.session.commit() 
-
-    return "logged"
+        return "logged"
+    except:
+        return "logged failed"
 
 # get logclick
 @app.route('/getlogclick')
 def getlogclick():
-
-    all_logs = LogContent.query.order_by(asc(LogContent.log_date)).all()
-    return all_logs[-1].rec_title
+    try:
+        all_logs = LogContent.query.order_by(asc(LogContent.log_date)).all()
+        return all_logs[-1].rec_title
+    except:
+        return "get log failed"
 
 # Download
 @app.route('/download/<int:pic_id>')
@@ -326,232 +332,234 @@ def delete(pic_id):
 # lab
 @app.route('/laboratory.php', methods=['POST'])
 def predict():
+    try:
+        file = request.files['image']
+        data = file.read()
+        oslog = request.form['extra']
+        userid = request.form['username']
+        lang = request.form['lang']
+        pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
+        og_img = Image.open(file.stream)
 
-    file = request.files['image']
-    data = file.read()
-    oslog = request.form['extra']
-    userid = request.form['username']
-    lang = request.form['lang']
-    pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
-    og_img = Image.open(file.stream)
+        # crop in case of ui in the chrome screen
+        if "chrome" in json.loads(oslog)["appname"].lower():
+            f = Image.open(file)
+            w,h = f.size
+            og_img = f.crop((0, 0, w, h-150))
+            buffered = BytesIO()
+            og_img.save(buffered, format="JPEG")
+            data = buffered.getvalue()
 
-    # crop in case of ui in the chrome screen
-    if "chrome" in json.loads(oslog)["appname"].lower():
-        f = Image.open(file)
-        w,h = f.size
-        og_img = f.crop((0, 0, w, h-150))
-        buffered = BytesIO()
-        og_img.save(buffered, format="JPEG")
-        data = buffered.getvalue()
+        render_file = render_picture(data)
 
-    render_file = render_picture(data)
+        # most recent frame
+        query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+        docs = [doc for doc in query_docs if doc.text.strip()!='']
 
-    # most recent frame
-    query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
-    docs = [doc for doc in query_docs if doc.text.strip()!='']
-
-    curr = Image.open(BytesIO(data))
-    prev = None
-    change = None
-    isChange = True
-    # if sql result is not empty
-    # if docs.count()>0:
-    if len(docs)>0:
-        prev = Image.open(BytesIO(docs[-1].data))
-        # if user use the same app --> otherwise user switch app and we run ocr on the entire screen
-        if (curr.size == prev.size):
-            # only change is extracted
-            diff = ImageChops.difference(curr, prev)
-            # if there is change, we crop the curr screen to change --> otherwise, no change at all really.
-            if (diff.getbbox()):
-                print(userid, 'information change', diff.getbbox())
-                change = curr.crop((diff.getbbox()))
+        curr = Image.open(BytesIO(data))
+        prev = None
+        change = None
+        isChange = True
+        # if sql result is not empty
+        # if docs.count()>0:
+        if len(docs)>0:
+            prev = Image.open(BytesIO(docs[-1].data))
+            # if user use the same app --> otherwise user switch app and we run ocr on the entire screen
+            if (curr.size == prev.size):
+                # only change is extracted
+                diff = ImageChops.difference(curr, prev)
+                # if there is change, we crop the curr screen to change --> otherwise, no change at all really.
+                if (diff.getbbox()):
+                    print(userid, 'information change', diff.getbbox())
+                    change = curr.crop((diff.getbbox()))
+                else:
+                    print(userid, 'no change')
+                    isChange = False
             else:
-                print(userid, 'no change')
-                isChange = False
+                print(userid, 'switch app or window size different')
+
+        # convert screen to text - tesseract
+        text = ''
+        # if there is change, we do ocr
+        if isChange:
+            text = convertToText(change, lang=lang) if change else convertToText(Image.open(file.stream), lang=lang)
+            text = text.strip()
         else:
-            print(userid, 'switch app or window size different')
+            print(userid, 'dont upload')
+            return "file uploaded" 
 
-    # convert screen to text - tesseract
-    text = ''
-    # if there is change, we do ocr
-    if isChange:
-        text = convertToText(change, lang=lang) if change else convertToText(Image.open(file.stream), lang=lang)
-        text = text.strip()
-    else:
-        print(userid, 'dont upload')
-        return "file uploaded" 
-
-    # ibm nlp only there is information change
-    entities = detect_entities(text) if text!='' else ''
-    webquery = getWebQuery(oslog)
+        # ibm nlp only there is information change
+        entities = detect_entities(text) if text!='' else ''
+        webquery = getWebQuery(oslog)
 
 
-    newFile = FileContent(name=file.filename.split('/')[-1], data=data, rendered_data=render_file, text=text, oslog=oslog, userid=userid, pic_date=pic_date, entities=entities, webquery=webquery)
-    db.session.add(newFile)
-    db.session.commit() 
+        newFile = FileContent(name=file.filename.split('/')[-1], data=data, rendered_data=render_file, text=text, oslog=oslog, userid=userid, pic_date=pic_date, entities=entities, webquery=webquery)
+        db.session.add(newFile)
+        db.session.commit() 
 
-    # Predict here
-    # get again most recent frame
-    query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
-    docs = [doc for doc in query_docs if doc.text.strip()!='']
-    model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
-    data = DataLoader(model_path)
-    # data.print_info()
-    params["corpus_directory"] = model_path
-    projector = DataProjector(data, params, model_path)
-    projector.generate_latent_space()
-    projector.create_feature_matrices()
+        # Predict here
+        # get again most recent frame
+        query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+        docs = [doc for doc in query_docs if doc.text.strip()!='']
+        model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
+        data = DataLoader(model_path)
+        # data.print_info()
+        params["corpus_directory"] = model_path
+        projector = DataProjector(data, params, model_path)
+        projector.generate_latent_space()
+        projector.create_feature_matrices()
 
-    pinned_item = []           # the items that are pinned in the frontend (needed for calculating pair similarity)
+        pinned_item = []           # the items that are pinned in the frontend (needed for calculating pair similarity)
 
-    for method_ind in range(num_methods):
-        method = Method_list[method_ind]
+        for method_ind in range(num_methods):
+            method = Method_list[method_ind]
 
-        selected_terms = []        # ID of terms that the user has given feedback to
-        feedback_terms = []        # feedback value on the selected terms
-        recommended_terms = []     # list of ID of terms that have been recommended to the user
-        selected_docs = []         # ID of snapshots that the user has given feedback to (may not be available in practice)
-        feedback_docs = []         # feedback value on the selected snapshots (may not be available in practice)
+            selected_terms = []        # ID of terms that the user has given feedback to
+            feedback_terms = []        # feedback value on the selected terms
+            recommended_terms = []     # list of ID of terms that have been recommended to the user
+            selected_docs = []         # ID of snapshots that the user has given feedback to (may not be available in practice)
+            feedback_docs = []         # feedback value on the selected snapshots (may not be available in practice)
 
-        print('Loading real-time generated snapshots...')
-        all_online_docs = []   # all snapshots generated from realtime user activity
-        fv_online_docs = []    # considered snapshots generated from realtime user activity
-        fb_online_docs = []    # dummy feedback for the newly generated snapshots
+            print('Loading real-time generated snapshots...')
+            all_online_docs = []   # all snapshots generated from realtime user activity
+            fv_online_docs = []    # considered snapshots generated from realtime user activity
+            fb_online_docs = []    # dummy feedback for the newly generated snapshots
 
-        online_data = docs
-        # print(online_data[-1])
-        online_screens = [screen.text for screen in online_data[-2:]]
-        online_entities = [getEntities(screen.entities) for screen in online_data[-2:]]
-        online_apps = [getApp(screen.oslog) for screen in online_data[-2:]]
-        online_docs = [getDoc(screen.oslog) for screen in online_data[-2:]]
-        online_webqueries = [getWebQuery(screen.oslog) for screen in online_data[-2:]]
-        fv_online_docs = getOnlineDocs(model_path, online_screens, online_entities, online_apps, online_docs, online_webqueries)
-        fb_online_docs+= [1 for i in range(len(fv_online_docs))]
-
-
-        if method == "LSA-coupled-Thompson":
-            # initialize the user model in the projected space
-            user_model = UserModelCoupled(params)
-            # create the design matrices for docs and terms
-            user_model.create_design_matrices(projector, selected_terms, feedback_terms,selected_docs, feedback_docs, fv_online_docs, fb_online_docs)
-            #user_model.create_design_matrices(projector, selected_terms, feedback_terms, [1], [2], [[(1,2),(4,3)], [(2,2),(14,1)] ], [0.5, 0.1])
-            # posterior inference
-            user_model.learn()
-            # Thompson sampling for coupled EVE
-            #TODO: test having K thompson sampling for the K recommendations
-            if params["Thompson_exploration"]:
-                theta = user_model.thompson_sampling()
-            else:
-                theta = user_model.Mu # in case of no exploration, use the mean of the posterior
-            scored_docs = np.dot(projector.doc_f_mat, theta)
-            scored_terms = np.dot(projector.term_f_mat, theta)
-            #print theta
-
-        if method == "LSA-coupled-UCB":
-            # initialize the user model in the projected space
-            user_model = UserModelCoupled(params)
-            # create the design matrices for docs and terms
-            user_model.create_design_matrices(projector, selected_terms, feedback_terms,selected_docs, feedback_docs, fv_online_docs, fb_online_docs)
-            # posterior inference
-            user_model.learn()
-            # Upper confidence bound method
-            scored_docs = user_model.UCB(projector.doc_f_mat)
-            scored_terms = user_model.UCB(projector.term_f_mat)
-
-        if method == "Random":
-            scored_docs = np.random.uniform(0,1,projector.num_docs)
-            scored_terms = np.random.uniform(0,1,projector.num_terms)
-
-        #---------------------- 3.4: gather user feedback ---------------------------#
-        #sort items based on their index
-        #todo: if time consuming then have k maxs instead of sort
-        sorted_docs = sorted(range(len(scored_docs)), key=lambda k:scored_docs[k], reverse=True)
-        # make sure the selected items are not recommended to user again
-        sorted_docs_valid = [doc_idx for doc_idx in sorted_docs if doc_idx not in set(selected_docs)]
-
-        # make sure the selected terms are not recommended to user again
-        sorted_terms = sorted(range(len(scored_terms)), key=lambda k:scored_terms[k], reverse=True)
-
-        sorted_views_list = []  # sorted ranked list of each view
-        for view in range(1, data.num_views):
-            # sort items of each view. Exclude (or not exclude) the previously recommended_terms.
-            if params["repeated_recommendation"]:
-                sorted_view = [term_idx for term_idx in sorted_terms
-                               if term_idx not in set(selected_terms) and data.views_ind[term_idx] == view]
-            else:
-                sorted_view = [term_idx for term_idx in sorted_terms
-                               if term_idx not in set(recommended_terms) and data.views_ind[term_idx] == view]
-
-            sorted_views_list.append(sorted_view)
-
-        for view in range(1, data.num_views):
-            print('view %d:' %view)
-            for i in range(min(params["suggestion_count"],data.num_items_per_view[view])):
-                print('    %d,' %sorted_views_list[view-1][i] + ' ' + data.feature_names[sorted_views_list[view-1][i]])
-        print('Relevant document IDs (for debugging):')
-        for i in range(params["suggestion_count"]):
-            print('    %d' %sorted_docs_valid[i])
+            online_data = docs
+            # print(online_data[-1])
+            online_screens = [screen.text for screen in online_data[-2:]]
+            online_entities = [getEntities(screen.entities) for screen in online_data[-2:]]
+            online_apps = [getApp(screen.oslog) for screen in online_data[-2:]]
+            online_docs = [getDoc(screen.oslog) for screen in online_data[-2:]]
+            online_webqueries = [getWebQuery(screen.oslog) for screen in online_data[-2:]]
+            fv_online_docs = getOnlineDocs(model_path, online_screens, online_entities, online_apps, online_docs, online_webqueries)
+            fb_online_docs+= [1 for i in range(len(fv_online_docs))]
 
 
-    #organize the recommentations in the right format
-    data_output = {}
-    data_output["keywords"] = [(sorted_views_list[0][i],data.feature_names[sorted_views_list[0][i]],
-                                scored_terms[sorted_views_list[0][i]]) for i in range(min(params["suggestion_count"],data.num_items_per_view[1])) ]
-    print("key")
-    data_output["applications"] = [(sorted_views_list[1][i],data.feature_names[sorted_views_list[1][i]],
-                                    scored_terms[sorted_views_list[1][i]]) for i in range(min(params["suggestion_count"],data.num_items_per_view[2]))]
-    print("app")
-    data_output["people"] = [(sorted_views_list[2][i],data.feature_names[sorted_views_list[2][i]],
-                                scored_terms[sorted_views_list[2][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[3]))]
-    print("people")
+            if method == "LSA-coupled-Thompson":
+                # initialize the user model in the projected space
+                user_model = UserModelCoupled(params)
+                # create the design matrices for docs and terms
+                user_model.create_design_matrices(projector, selected_terms, feedback_terms,selected_docs, feedback_docs, fv_online_docs, fb_online_docs)
+                #user_model.create_design_matrices(projector, selected_terms, feedback_terms, [1], [2], [[(1,2),(4,3)], [(2,2),(14,1)] ], [0.5, 0.1])
+                # posterior inference
+                user_model.learn()
+                # Thompson sampling for coupled EVE
+                #TODO: test having K thompson sampling for the K recommendations
+                if params["Thompson_exploration"]:
+                    theta = user_model.thompson_sampling()
+                else:
+                    theta = user_model.Mu # in case of no exploration, use the mean of the posterior
+                scored_docs = np.dot(projector.doc_f_mat, theta)
+                scored_terms = np.dot(projector.term_f_mat, theta)
+                #print theta
 
-    data_output["webqueries"] = [(sorted_views_list[3][i],data.feature_names[sorted_views_list[3][i]],
-                                scored_terms[sorted_views_list[3][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[4])) if data.feature_names[sorted_views_list[3][i]] != ""]
-    print("webqueries")
-    # TODO: how many document? I can also send the estimated relevance.
-    #data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url']) for i in range(params["suggestion_count"])]
-    #TODO: THis is the hack to distinguish doc and term IDS. Add 600000 to doc IDs for frontend
-    # data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url'],os.path.join(snapshot_directory, "1513349785.60169.jpeg"), loadLOG(sorted_docs_valid[i])['appname']) for i in range(100)]
-    data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],docs[sorted_docs_valid[i]].text) for i in range(50)]
-    
-    # either this
-    data_output["pair_similarity"] = []
+            if method == "LSA-coupled-UCB":
+                # initialize the user model in the projected space
+                user_model = UserModelCoupled(params)
+                # create the design matrices for docs and terms
+                user_model.create_design_matrices(projector, selected_terms, feedback_terms,selected_docs, feedback_docs, fv_online_docs, fb_online_docs)
+                # posterior inference
+                user_model.learn()
+                # Upper confidence bound method
+                scored_docs = user_model.UCB(projector.doc_f_mat)
+                scored_terms = user_model.UCB(projector.term_f_mat)
 
-    # input docs
-    data_output["recent_docs"] = list(set([(json.loads(screen.oslog)['url'],getDoc(screen.oslog)) for screen in docs[-2:]]))
-    # or this to allow feedback on recs
-    # new_recommendations = []
-    # for view in range(1, data.num_views):
-    #     for i in range(min(params["suggestion_count"],data.num_items_per_view[view])):
-    #         new_recommendations.append(sorted_views_list[view-1][i])
-    #         if sorted_views_list[view-1][i] not in set(recommended_terms):
-    #             recommended_terms.append(sorted_views_list[view-1][i])
-    #
-    # item_list = list(set(new_recommendations + pinned_item))
-    #     # an array to hold the feature vectors
-    # recommended_fv = np.empty([len(item_list), projector.num_features])
-    # for i in range(len(item_list)):
-    #     recommended_fv[i, :] = projector.item_fv(item_list[i]) #get the feature vector
-    # #Compute the dot products
-    # sim_matrix = np.dot(recommended_fv, recommended_fv.T)
-    # #normalize the dot products
-    # sim_diags = np.diagonal(sim_matrix)
-    # sim_diags = np.sqrt(sim_diags)
-    # for i in range(len(item_list)):
-    #     sim_matrix[i,:] = sim_matrix[i,:]/sim_diags
-    # for i in range(len(item_list)):
-    #     sim_matrix[:,i] = sim_matrix[:,i]/sim_diags
-    # #save pairwise similarities in a list of tuples
-    # all_sims = [(item_list[i],item_list[j],sim_matrix[i,j])
-    #             for i in range(len(item_list)-1) for j in range(i+1,len(item_list))]
-    # data_output["pair_similarity"] = all_sims
+            if method == "Random":
+                scored_docs = np.random.uniform(0,1,projector.num_docs)
+                scored_terms = np.random.uniform(0,1,projector.num_terms)
 
-    print("prepared recs")
-    newRec = RecContent(userid=userid, text=json.dumps(data_output))
-    db.session.add(newRec)
-    db.session.commit() 
-    return "file uploaded"
+            #---------------------- 3.4: gather user feedback ---------------------------#
+            #sort items based on their index
+            #todo: if time consuming then have k maxs instead of sort
+            sorted_docs = sorted(range(len(scored_docs)), key=lambda k:scored_docs[k], reverse=True)
+            # make sure the selected items are not recommended to user again
+            sorted_docs_valid = [doc_idx for doc_idx in sorted_docs if doc_idx not in set(selected_docs)]
+
+            # make sure the selected terms are not recommended to user again
+            sorted_terms = sorted(range(len(scored_terms)), key=lambda k:scored_terms[k], reverse=True)
+
+            sorted_views_list = []  # sorted ranked list of each view
+            for view in range(1, data.num_views):
+                # sort items of each view. Exclude (or not exclude) the previously recommended_terms.
+                if params["repeated_recommendation"]:
+                    sorted_view = [term_idx for term_idx in sorted_terms
+                                   if term_idx not in set(selected_terms) and data.views_ind[term_idx] == view]
+                else:
+                    sorted_view = [term_idx for term_idx in sorted_terms
+                                   if term_idx not in set(recommended_terms) and data.views_ind[term_idx] == view]
+
+                sorted_views_list.append(sorted_view)
+
+            for view in range(1, data.num_views):
+                print('view %d:' %view)
+                for i in range(min(params["suggestion_count"],data.num_items_per_view[view])):
+                    print('    %d,' %sorted_views_list[view-1][i] + ' ' + data.feature_names[sorted_views_list[view-1][i]])
+            print('Relevant document IDs (for debugging):')
+            for i in range(params["suggestion_count"]):
+                print('    %d' %sorted_docs_valid[i])
+
+
+        #organize the recommentations in the right format
+        data_output = {}
+        data_output["keywords"] = [(sorted_views_list[0][i],data.feature_names[sorted_views_list[0][i]],
+                                    scored_terms[sorted_views_list[0][i]]) for i in range(min(params["suggestion_count"],data.num_items_per_view[1])) ]
+        print("key")
+        data_output["applications"] = [(sorted_views_list[1][i],data.feature_names[sorted_views_list[1][i]],
+                                        scored_terms[sorted_views_list[1][i]]) for i in range(min(params["suggestion_count"],data.num_items_per_view[2]))]
+        print("app")
+        data_output["people"] = [(sorted_views_list[2][i],data.feature_names[sorted_views_list[2][i]],
+                                    scored_terms[sorted_views_list[2][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[3]))]
+        print("people")
+
+        data_output["webqueries"] = [(sorted_views_list[3][i],data.feature_names[sorted_views_list[3][i]],
+                                    scored_terms[sorted_views_list[3][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[4])) if data.feature_names[sorted_views_list[3][i]] != ""]
+        print("webqueries")
+        # TODO: how many document? I can also send the estimated relevance.
+        #data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url']) for i in range(params["suggestion_count"])]
+        #TODO: THis is the hack to distinguish doc and term IDS. Add 600000 to doc IDs for frontend
+        # data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url'],os.path.join(snapshot_directory, "1513349785.60169.jpeg"), loadLOG(sorted_docs_valid[i])['appname']) for i in range(100)]
+        data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],docs[sorted_docs_valid[i]].text) for i in range(50)]
+        
+        # either this
+        data_output["pair_similarity"] = []
+
+        # input docs
+        data_output["recent_docs"] = list(set([(json.loads(screen.oslog)['url'],getDoc(screen.oslog)) for screen in docs[-2:]]))
+        # or this to allow feedback on recs
+        # new_recommendations = []
+        # for view in range(1, data.num_views):
+        #     for i in range(min(params["suggestion_count"],data.num_items_per_view[view])):
+        #         new_recommendations.append(sorted_views_list[view-1][i])
+        #         if sorted_views_list[view-1][i] not in set(recommended_terms):
+        #             recommended_terms.append(sorted_views_list[view-1][i])
+        #
+        # item_list = list(set(new_recommendations + pinned_item))
+        #     # an array to hold the feature vectors
+        # recommended_fv = np.empty([len(item_list), projector.num_features])
+        # for i in range(len(item_list)):
+        #     recommended_fv[i, :] = projector.item_fv(item_list[i]) #get the feature vector
+        # #Compute the dot products
+        # sim_matrix = np.dot(recommended_fv, recommended_fv.T)
+        # #normalize the dot products
+        # sim_diags = np.diagonal(sim_matrix)
+        # sim_diags = np.sqrt(sim_diags)
+        # for i in range(len(item_list)):
+        #     sim_matrix[i,:] = sim_matrix[i,:]/sim_diags
+        # for i in range(len(item_list)):
+        #     sim_matrix[:,i] = sim_matrix[:,i]/sim_diags
+        # #save pairwise similarities in a list of tuples
+        # all_sims = [(item_list[i],item_list[j],sim_matrix[i,j])
+        #             for i in range(len(item_list)-1) for j in range(i+1,len(item_list))]
+        # data_output["pair_similarity"] = all_sims
+
+        print("prepared recs")
+        newRec = RecContent(userid=userid, text=json.dumps(data_output))
+        db.session.add(newRec)
+        db.session.commit() 
+        return "file uploaded"
+    except:
+        return "uploaded failed"
 # lab
 @app.route('/checklicenseid.php', methods=['POST'])
 def licenseid():
