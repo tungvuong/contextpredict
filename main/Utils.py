@@ -57,7 +57,7 @@ params = {
     # Number of iterations of the simulated study
     "num_iterations": 50,
     # Number of latent dimensions for data representation
-    "num_latent_dims": 100,
+    "num_latent_dims": 50,
     # Number of runs (only for the simulated study, set to 1 for real data setting)
     "num_runs": 1,  # NOT IMPLEMENTED YET
     # True: prepare the data for UI but have the interaction in the terminal
