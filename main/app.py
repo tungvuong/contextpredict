@@ -271,11 +271,14 @@ def build(user_id):
     file_data = FileContent.query.filter((FileContent.userid == user_id)).order_by(asc(FileContent.pic_date))
     screens = [screen.text for screen in file_data if screen.text.strip()!='']
     print('! data done')
+    print('len data: ' + file_data.count())
     entities = [getEntities(screen.entities) for screen in file_data if screen.text.strip()!='']
     apps = [getApp(screen.oslog) for screen in file_data if screen.text.strip()!='']
     docs = [getDoc(screen.oslog) for screen in file_data if screen.text.strip()!='']
     webqueries = [getWebQuery(screen.oslog) for screen in file_data if screen.text.strip()!='']
     buildCorpus(model_path,screens,entities,apps,docs,webqueries)
+
+    print('! buildCorpus done')
 
     #create matrix for retrieval
     # Path(os.path.join(model_path,'temp')).rmdir()
@@ -413,7 +416,7 @@ def predict():
         # query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
         now = datetime.utcnow()
         rounded = pic_date - timedelta(minutes=30000000)
-        query_docs = FileContent.query.filter_by(userid=userid).order_by(asc(FileContent.pic_date))
+        query_docs = FileContent.query.filter_by(userid="FA3441DEC434").order_by(asc(FileContent.pic_date))
         docs = [doc for doc in query_docs if doc.text.strip()!='']
         model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
         data = DataLoader(model_path)
