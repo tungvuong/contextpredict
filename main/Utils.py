@@ -138,12 +138,20 @@ def iter_docs(screens, entities, apps, docs, webqueries, stoplist, amount_docs_a
                    if x not in stoplist and len(x)>0]
             if (len(entities_in_text)>0): 
 	            texts+= entities_in_text
+            else:
+            	print('entities_in_text')
             if (len(apps[idx])>0): 
 	            texts+= [apps[idx]]
+            else:
+            	print('apps')
             if (len(docs[idx])>0): 
 	            texts+= [docs[idx]]
+            else:
+            	print('docs')
             if (len(webqueries[idx])>0): 
             	texts+= [webqueries[idx]]
+            else:
+            	print('webqueries')
             # if len(texts)<5:
             # 	continue
             yield (x for x in texts)
