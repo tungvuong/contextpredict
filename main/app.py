@@ -56,6 +56,25 @@ cors = CORS(app, resources={r"/retrieve": {"origins": "*"}, r"/logclick": {"orig
 db = SQLAlchemy(app)
 allDataLoad = {}
 model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
+
+
+print('begin extract data ' + 'C1MR3058G940')
+model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
+Path(model_path).mkdir(parents=True, exist_ok=True)
+file_data = FileContent.query.filter((FileContent.userid == 'C1MR3058G940')).order_by(asc(FileContent.pic_date))
+screens = [screen.text for screen in file_data if screen.text.strip()!='']
+np.save(model_path+'/screens.npy', screens)
+print('! data done')
+print('len data: ' + file_data.count())
+entities = [getEntities(screen.entities) for screen in file_data if screen.text.strip()!='']
+apps = [getApp(screen.oslog) for screen in file_data if screen.text.strip()!='']
+docs = [getDoc(screen.oslog) for screen in file_data if screen.text.strip()!='']
+webqueries = [getWebQuery(screen.oslog) for screen in file_data if screen.text.strip()!='']
+buildCorpus(model_path,screens,entities,apps,docs,webqueries)
+
+print('! buildCorpus done')
+
+
 print(len(np.load(model_path+'/screens.npy')))
 data1 = DataLoader(model_path)
 data1.print_info()
