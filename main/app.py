@@ -270,6 +270,7 @@ def build(user_id):
     Path(model_path).mkdir(parents=True, exist_ok=True)
     file_data = FileContent.query.filter((FileContent.userid == user_id)).order_by(asc(FileContent.pic_date))
     screens = [screen.text for screen in file_data if screen.text.strip()!='']
+    np.save(model_path+'/screens.npy', screens)
     print('! data done')
     print('len data: ' + file_data.count())
     entities = [getEntities(screen.entities) for screen in file_data if screen.text.strip()!='']
