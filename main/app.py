@@ -54,8 +54,10 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 cors = CORS(app, resources={r"/retrieve": {"origins": "*"}, r"/logclick": {"origins": "*"}})
 db = SQLAlchemy(app)
-
-
+allDataLoad = {}
+model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
+data1 = DataLoader(model_path)
+allDataLoad['C1MR3058G940'] = data1
 
 # Picture table. By default the table name is filecontent
 class FileContent(db.Model):
@@ -421,7 +423,9 @@ def predict():
         print(query_docs.count())
         docs = [doc for doc in query_docs if doc.text.strip()!='']
         model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
-        data = DataLoader(model_path)
+        # if userid in allDataLoad:
+        # data = DataLoader(model_path)
+        data = allDataLoad[userid]
         # data.print_info()
         params["corpus_directory"] = model_path
         projector = DataProjector(data, params, model_path)
