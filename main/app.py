@@ -106,20 +106,20 @@ class LogContent(db.Model):
 
 
 
-print('begin extract data ' + 'FA3441DEC434')
-model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/FA3441DEC434')
-Path(model_path).mkdir(parents=True, exist_ok=True)
-# file_data = FileContent.query.filter((FileContent.userid == 'FA3441DEC434')).order_by(asc(FileContent.pic_date))
-screens = np.load(model_path+'/screens.npy', allow_pickle=True)
-print('! data done', len(screens))
-texts = [screen.text for screen in screens if screen.text.strip()!='']
-entities = [getEntities(screen.entities) for screen in screens if screen.text.strip()!='']
-apps = [getApp(screen.oslog) for screen in screens if screen.text.strip()!='']
-docs = [getDoc(screen.oslog) for screen in screens if screen.text.strip()!='']
-webqueries = [getWebQuery(screen.oslog) for screen in screens if screen.text.strip()!='']
-buildCorpus(model_path,texts,entities,apps,docs,webqueries)
+# print('begin extract data ' + 'FA3441DEC434')
+model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
+# Path(model_path).mkdir(parents=True, exist_ok=True)
+# # file_data = FileContent.query.filter((FileContent.userid == 'FA3441DEC434')).order_by(asc(FileContent.pic_date))
+# screens = np.load(model_path+'/screens.npy', allow_pickle=True)
+# print('! data done', len(screens))
+# texts = [screen.text for screen in screens if screen.text.strip()!='']
+# entities = [getEntities(screen.entities) for screen in screens if screen.text.strip()!='']
+# apps = [getApp(screen.oslog) for screen in screens if screen.text.strip()!='']
+# docs = [getDoc(screen.oslog) for screen in screens if screen.text.strip()!='']
+# webqueries = [getWebQuery(screen.oslog) for screen in screens if screen.text.strip()!='']
+# buildCorpus(model_path,texts,entities,apps,docs,webqueries)
 
-print('! buildCorpus done')
+# print('! buildCorpus done')
 
 
 data1 = DataLoader(model_path)
@@ -128,7 +128,7 @@ print(params)
 projector1 = DataProjector(data1, params, model_path)
 projector1.generate_latent_space()
 projector1.create_feature_matrices()
-allDataLoad['FA3441DEC434'] = (data1, projector1)
+allDataLoad['C1MR3058G940'] = (data1, projector1)
 
 # Index
 @app.route('/index', methods=['GET', 'POST'])
@@ -446,7 +446,6 @@ def predict():
         now = datetime.utcnow()
         rounded = pic_date - timedelta(seconds=30)
         query_docs = FileContent.query.filter_by(userid=userid).order_by(asc(FileContent.pic_date))
-        print(query_docs.count())
         docs = [doc for doc in query_docs if doc.text.strip()!='']
         model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
         # if userid in allDataLoad:
@@ -566,7 +565,7 @@ def predict():
                                     scored_terms[sorted_views_list[3][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[4])) if data.feature_names[sorted_views_list[3][i]] != ""]
         print("webqueries")
         print(sorted_docs_valid[1])
-        docs = np.load(model_path+'/screens.npy', screens)
+        docs = np.load(model_path+'/screens.npy', allow_pickle=True)
         print(len(docs))
         print(docs[0].oslog)
         # TODO: how many document? I can also send the estimated relevance.
