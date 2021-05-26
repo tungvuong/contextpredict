@@ -135,25 +135,19 @@ def iter_docs(screens, entities, apps, docs, webqueries, stoplist, amount_docs_a
             texts = [x for x in
                     gensim.utils.tokenize(text, lowercase=True, deacc=True,
                                          errors="ignore")
-                   if x not in stoplist and len(x)>0]
+                   if x not in stoplist and len(x)>3]
+            # texts+= entities_in_text
+            # texts+= [apps[idx]]
+            # texts+= [docs[idx]]
+            # texts+= [webqueries[idx]]
             if (len(entities_in_text)>0): 
 	            texts+= entities_in_text
-            else:
-            	print('entities_in_text')
             if (len(apps[idx])>0): 
 	            texts+= [apps[idx]]
-            else:
-            	print('apps')
             if (len(docs[idx])>0): 
 	            texts+= [docs[idx]]
-            else:
-            	print('docs')
             if (len(webqueries[idx])>0): 
             	texts+= [webqueries[idx]]
-            else:
-            	print('webqueries')
-            # if len(texts)<5:
-            # 	continue
             yield (x for x in texts)
 class MyCorpus(object):
     def __init__(self, screens, entities, apps, docs, webqueries, stoplist, amount_docs_already_index):
@@ -244,7 +238,7 @@ def getOnlineDocs(model_path, screens, entities, apps, docs, webqueries):
 				entities_in_text.append(e)
 			text = text.replace(raw_e, "")
 		doc = [x for x in gensim.utils.tokenize(text.strip().lower(), lowercase=True, deacc=True, errors="ignore")
-					if x not in stoplist and len(x)>0] + entities[idx] + [apps[idx]] + [docs[idx]] + [webqueries[idx]]
+					if x not in stoplist and len(x)>3] + entities[idx] + [apps[idx]] + [docs[idx]] + [webqueries[idx]]
 		all_online_docs+= [dictionary.doc2bow(doc)]
 	return all_online_docs
 
@@ -277,10 +271,10 @@ def getEntities(watson):
 	if 'keywords' in detail:
 		for keyword in detail['keywords']:
 			# keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>3 and (len(keyword['text'])==4 and ' ' not in keyword['text']) else []
-			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>0 else []
+			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>3 else []
 	if 'entities' in detail:
 		for keyword in detail['entities']:
-			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>0 else []
+			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>3 else []
 	return keywords
 
 def convertToText(change, lang):

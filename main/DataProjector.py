@@ -25,7 +25,6 @@ class DataProjector:
         self.corpus_lsi = None                       # contains the corpus in the LSI space
         self.lsi = None                              # the lsi transformation of corpus_normalized
         self.svd_v = None                            # the V matrix in lsi[X] = U^-1*X = V*S
-        print(params["num_latent_dims"])
 
     def generate_latent_space(self):
         #creating temp folder if not exist
@@ -46,7 +45,7 @@ class DataProjector:
             print('Create latent space and save it in /temp...')
             t1 = time.time()
             #todo: maybe I don't need to do tfidf, but if I do I should also do it for the query
-            self.tfidf = models.TfidfModel(self.data_orig.corpus,self.num_features)
+            self.tfidf = models.TfidfModel(self.data_orig.corpus)
             self.tfidf.save(os.path.join(self.model_path,'./temp/corp1.tfidf'))
             corpus_tfidf = self.tfidf[self.data_orig.corpus]
             self.corpus_normalized = corpus_tfidf # tfidf is a basic normalization
@@ -80,7 +79,6 @@ class DataProjector:
             w = w/self.lsi.projection.s  # this is necessary based on the LSI in wiki
 
             # Use sparse matrix rather than dense matrices to do the calculations (save memory)
-            print(self.data_orig.corpus.num_nnz, self.data_orig.num_features, self.data_orig.num_data )
             M_T_sparse = matutils.corpus2csc(self.corpus_normalized, num_terms=self.data_orig.num_features, num_docs=self.data_orig.num_data, num_nnz=self.data_orig.corpus.num_nnz)
             self.term_f_mat = M_T_sparse.dot(w)
             np.save(os.path.join(self.model_path,'./temp/term_f_mat.npy'), self.term_f_mat)
