@@ -136,10 +136,14 @@ def iter_docs(screens, entities, apps, docs, webqueries, stoplist, amount_docs_a
                     gensim.utils.tokenize(text, lowercase=True, deacc=True,
                                          errors="ignore")
                    if x not in stoplist and len(x)>0]
-            texts+= entities_in_text
-            texts+= [apps[idx]]
-            texts+= [docs[idx]]
-            texts+= [webqueries[idx]]
+            if (len(entities_in_text)>0): 
+	            texts+= entities_in_text
+            if (len(apps[idx])>0): 
+	            texts+= [apps[idx]]
+            if (len(docs[idx])>0): 
+	            texts+= [docs[idx]]
+            if (len(webqueries[idx])>0): 
+            	texts+= [webqueries[idx]]
             # if len(texts)<5:
             # 	continue
             yield (x for x in texts)
