@@ -230,7 +230,7 @@ def getOnlineDocs(model_path, screens, entities, apps, docs, webqueries):
 				entities_in_text.append(e)
 			text = text.replace(raw_e, "")
 		doc = [x for x in gensim.utils.tokenize(text.strip().lower(), lowercase=True, deacc=True, errors="ignore")
-					if x not in stoplist and len(x)>2] + entities[idx] + [apps[idx]] + [docs[idx]] + [webqueries[idx]]
+					if x not in stoplist and len(x)>3] + entities[idx] + [apps[idx]] + [docs[idx]] + [webqueries[idx]]
 		all_online_docs+= [dictionary.doc2bow(doc)]
 	return all_online_docs
 
