@@ -418,6 +418,7 @@ def predict():
         now = datetime.utcnow()
         rounded = pic_date - timedelta(seconds=30)
         query_docs = FileContent.query.filter_by(userid=userid).order_by(asc(FileContent.pic_date))
+        print(query_docs.count())
         docs = [doc for doc in query_docs if doc.text.strip()!='']
         model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
         data = DataLoader(model_path)
