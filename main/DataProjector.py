@@ -43,6 +43,7 @@ class DataProjector:
         else:
             #use libraries from gensim to build LSI model
             print('Create latent space and save it in /temp...')
+            print(params["num_latent_dims"])
             t1 = time.time()
             #todo: maybe I don't need to do tfidf, but if I do I should also do it for the query
             self.tfidf = models.TfidfModel(self.data_orig.corpus)
