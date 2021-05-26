@@ -416,8 +416,8 @@ def predict():
         # get again most recent frame
         # query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
         now = datetime.utcnow()
-        rounded = pic_date - timedelta(minutes=30000000)
-        query_docs = FileContent.query.filter_by(userid="FA3441DEC434").order_by(asc(FileContent.pic_date))
+        rounded = pic_date - timedelta(seconds=30)
+        query_docs = FileContent.query.filter_by(userid=userid).order_by(asc(FileContent.pic_date))
         docs = [doc for doc in query_docs if doc.text.strip()!='']
         model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
         data = DataLoader(model_path)
@@ -534,6 +534,7 @@ def predict():
                                     scored_terms[sorted_views_list[3][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[4])) if data.feature_names[sorted_views_list[3][i]] != ""]
         print("webqueries")
         print(sorted_docs_valid[1])
+        docs = np.load(model_path+'/screens.npy', screens)
         print(len(docs))
         print(docs[0].oslog)
         # TODO: how many document? I can also send the estimated relevance.
