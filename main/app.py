@@ -111,7 +111,7 @@ model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/FA
 Path(model_path).mkdir(parents=True, exist_ok=True)
 # file_data = FileContent.query.filter((FileContent.userid == 'FA3441DEC434')).order_by(asc(FileContent.pic_date))
 screens = np.load(model_path+'/screens.npy', allow_pickle=True)
-print('! data done')
+print('! data done', len(screens))
 texts = [screen.text for screen in screens if screen.text.strip()!='']
 entities = [getEntities(screen.entities) for screen in screens if screen.text.strip()!='']
 apps = [getApp(screen.oslog) for screen in screens if screen.text.strip()!='']
