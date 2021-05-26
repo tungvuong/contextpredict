@@ -46,7 +46,7 @@ class DataProjector:
             print('Create latent space and save it in /temp...')
             t1 = time.time()
             #todo: maybe I don't need to do tfidf, but if I do I should also do it for the query
-            self.tfidf = models.TfidfModel(self.data_orig.corpus)
+            self.tfidf = models.TfidfModel(self.data_orig.corpus,self.num_features)
             self.tfidf.save(os.path.join(self.model_path,'./temp/corp1.tfidf'))
             corpus_tfidf = self.tfidf[self.data_orig.corpus]
             self.corpus_normalized = corpus_tfidf # tfidf is a basic normalization
