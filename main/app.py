@@ -57,6 +57,7 @@ db = SQLAlchemy(app)
 allDataLoad = {}
 model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
 data1 = DataLoader(model_path)
+data1.print_info()
 projector1 = DataProjector(data1, params, model_path)
 projector1.generate_latent_space()
 projector1.create_feature_matrices()
