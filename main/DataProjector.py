@@ -25,6 +25,7 @@ class DataProjector:
         self.corpus_lsi = None                       # contains the corpus in the LSI space
         self.lsi = None                              # the lsi transformation of corpus_normalized
         self.svd_v = None                            # the V matrix in lsi[X] = U^-1*X = V*S
+        print(params["num_latent_dims"])
 
     def generate_latent_space(self):
         #creating temp folder if not exist
@@ -43,7 +44,6 @@ class DataProjector:
         else:
             #use libraries from gensim to build LSI model
             print('Create latent space and save it in /temp...')
-            print(params["num_latent_dims"])
             t1 = time.time()
             #todo: maybe I don't need to do tfidf, but if I do I should also do it for the query
             self.tfidf = models.TfidfModel(self.data_orig.corpus)
