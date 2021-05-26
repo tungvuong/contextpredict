@@ -122,7 +122,6 @@ buildCorpus(model_path,texts,entities,apps,docs,webqueries)
 print('! buildCorpus done')
 
 
-print(len(np.load(model_path+'/screens.npy')))
 data1 = DataLoader(model_path)
 data1.print_info()
 print(params)
