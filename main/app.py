@@ -527,7 +527,7 @@ def predict():
         data_output["webqueries"] = [(sorted_views_list[3][i],data.feature_names[sorted_views_list[3][i]],
                                     scored_terms[sorted_views_list[3][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[4])) if data.feature_names[sorted_views_list[3][i]] != ""]
         print("webqueries")
-        print(json.loads(docs[sorted_docs_valid[1]].oslog))
+        print(sorted_docs_valid[1])
         # TODO: how many document? I can also send the estimated relevance.
         #data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url']) for i in range(params["suggestion_count"])]
         #TODO: THis is the hack to distinguish doc and term IDS. Add 600000 to doc IDs for frontend
