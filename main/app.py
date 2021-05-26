@@ -58,10 +58,10 @@ allDataLoad = {}
 model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
 
 
-print('begin extract data ' + 'C1MR3058G940')
-model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
+print('begin extract data ' + 'FA3441DEC434')
+model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/FA3441DEC434')
 Path(model_path).mkdir(parents=True, exist_ok=True)
-file_data = FileContent.query.filter((FileContent.userid == 'C1MR3058G940')).order_by(asc(FileContent.pic_date))
+file_data = FileContent.query.filter((FileContent.userid == 'FA3441DEC434')).order_by(asc(FileContent.pic_date))
 screens = [screen.text for screen in file_data if screen.text.strip()!='']
 np.save(model_path+'/screens.npy', screens)
 print('! data done')
@@ -82,7 +82,7 @@ print(params)
 projector1 = DataProjector(data1, params, model_path)
 projector1.generate_latent_space()
 projector1.create_feature_matrices()
-allDataLoad['C1MR3058G940'] = (data1, projector1)
+allDataLoad['FA3441DEC434'] = (data1, projector1)
 
 # Picture table. By default the table name is filecontent
 class FileContent(db.Model):
