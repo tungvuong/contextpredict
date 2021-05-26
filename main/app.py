@@ -109,9 +109,8 @@ class LogContent(db.Model):
 print('begin extract data ' + 'FA3441DEC434')
 model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/FA3441DEC434')
 Path(model_path).mkdir(parents=True, exist_ok=True)
-file_data = FileContent.query.filter((FileContent.userid == 'FA3441DEC434')).order_by(asc(FileContent.pic_date))
-screens = [screen for screen in file_data if screen.text.strip()!='']
-np.save(model_path+'/screens.npy', screens)
+# file_data = FileContent.query.filter((FileContent.userid == 'FA3441DEC434')).order_by(asc(FileContent.pic_date))
+screens = np.load(model_path+'/screens.npy')
 print('! data done')
 entities = [getEntities(screen.entities) for screen in file_data if screen.text.strip()!='']
 apps = [getApp(screen.oslog) for screen in file_data if screen.text.strip()!='']
