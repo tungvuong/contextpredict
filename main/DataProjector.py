@@ -80,6 +80,7 @@ class DataProjector:
             w = w/self.lsi.projection.s  # this is necessary based on the LSI in wiki
 
             # Use sparse matrix rather than dense matrices to do the calculations (save memory)
+            print(self.data_orig.corpus.num_nnz)
             M_T_sparse = matutils.corpus2csc(self.corpus_normalized, num_terms=self.data_orig.num_features, num_docs=self.data_orig.num_data, num_nnz=self.data_orig.corpus.num_nnz)
             self.term_f_mat = M_T_sparse.dot(w)
             np.save(os.path.join(self.model_path,'./temp/term_f_mat.npy'), self.term_f_mat)
