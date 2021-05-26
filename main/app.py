@@ -265,10 +265,12 @@ def download(pic_id):
 # Download
 @app.route('/build/<string:user_id>')
 def build(user_id):
+    print('begin extract data ' + user_id)
     model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+user_id)
     Path(model_path).mkdir(parents=True, exist_ok=True)
     file_data = FileContent.query.filter((FileContent.userid == user_id)).order_by(asc(FileContent.pic_date))
     screens = [screen.text for screen in file_data if screen.text.strip()!='']
+    print('! data done')
     entities = [getEntities(screen.entities) for screen in file_data if screen.text.strip()!='']
     apps = [getApp(screen.oslog) for screen in file_data if screen.text.strip()!='']
     docs = [getDoc(screen.oslog) for screen in file_data if screen.text.strip()!='']
