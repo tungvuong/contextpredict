@@ -140,6 +140,8 @@ def iter_docs(screens, entities, apps, docs, webqueries, stoplist, amount_docs_a
             texts+= [apps[idx]]
             texts+= [docs[idx]]
             texts+= [webqueries[idx]]
+            if len(texts)<5:
+            	continue
             yield (x for x in texts)
 class MyCorpus(object):
     def __init__(self, screens, entities, apps, docs, webqueries, stoplist, amount_docs_already_index):
