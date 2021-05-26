@@ -108,16 +108,12 @@ class LogContent(db.Model):
 
 print('begin extract data ' + 'FA3441DEC434')
 model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/FA3441DEC434')
-Path(model_path).mkdir(parents=True, exist_ok=True)
-file_data = FileContent.query.filter((FileContent.userid == 'FA3441DEC434')).order_by(asc(FileContent.pic_date))
-screens = [screen.text for screen in file_data if screen.text.strip()!='']
-np.save(model_path+'/screens.npy', screens)
+screens = np.loads(model_path+'/screens.npy')
 print('! data done')
-print('len data: ' + file_data.count())
-entities = [getEntities(screen.entities) for screen in file_data if screen.text.strip()!='']
-apps = [getApp(screen.oslog) for screen in file_data if screen.text.strip()!='']
-docs = [getDoc(screen.oslog) for screen in file_data if screen.text.strip()!='']
-webqueries = [getWebQuery(screen.oslog) for screen in file_data if screen.text.strip()!='']
+entities = [getEntities(screen.entities) for screen in screens if screen.text.strip()!='']
+apps = [getApp(screen.oslog) for screen in screens if screen.text.strip()!='']
+docs = [getDoc(screen.oslog) for screen in screens if screen.text.strip()!='']
+webqueries = [getWebQuery(screen.oslog) for screen in screens if screen.text.strip()!='']
 buildCorpus(model_path,screens,entities,apps,docs,webqueries)
 
 print('! buildCorpus done')
