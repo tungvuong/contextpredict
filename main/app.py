@@ -57,7 +57,10 @@ db = SQLAlchemy(app)
 allDataLoad = {}
 model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
 data1 = DataLoader(model_path)
-allDataLoad['C1MR3058G940'] = data1
+projector1 = DataProjector(data1, params, model_path)
+projector1.generate_latent_space()
+projector1.create_feature_matrices()
+allDataLoad['C1MR3058G940'] = (data1, projector1)
 
 # Picture table. By default the table name is filecontent
 class FileContent(db.Model):
@@ -425,12 +428,13 @@ def predict():
         model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
         # if userid in allDataLoad:
         # data = DataLoader(model_path)
-        data = allDataLoad[userid]
+        # data = allDataLoad[userid]
         # data.print_info()
-        params["corpus_directory"] = model_path
-        projector = DataProjector(data, params, model_path)
-        projector.generate_latent_space()
-        projector.create_feature_matrices()
+        # params["corpus_directory"] = model_path
+        # projector = DataProjector(data, params, model_path)
+        # projector.generate_latent_space()
+        # projector.create_feature_matrices()
+        data, projector =  allDataLoad[userid][0], allDataLoad[userid][1]
 
         pinned_item = []           # the items that are pinned in the frontend (needed for calculating pair similarity)
 
