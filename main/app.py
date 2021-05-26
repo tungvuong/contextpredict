@@ -56,6 +56,7 @@ cors = CORS(app, resources={r"/retrieve": {"origins": "*"}, r"/logclick": {"orig
 db = SQLAlchemy(app)
 allDataLoad = {}
 model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
+print(len(np.load(model_path+'/screens.npy')))
 data1 = DataLoader(model_path)
 data1.print_info()
 print(params)
