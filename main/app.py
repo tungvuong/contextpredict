@@ -135,7 +135,7 @@ allDataLoad['C1MR3058G940'] = (data1, projector1, docs1)
 def index():
 
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=(60*24*4)+(60*0))
+    rounded = now - timedelta(minutes=(60*24*0)+(60*0))
     # pics = FileContent.query.filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
     pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
 
@@ -154,7 +154,7 @@ def index():
 @app.route('/query')
 def query():
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=(60*24*4)+(60*0))
+    rounded = now - timedelta(minutes=(60*24*0)+(60*0))
     # all_pics = FileContent.query.filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
     all_pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
 
