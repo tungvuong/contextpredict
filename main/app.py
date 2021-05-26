@@ -123,12 +123,11 @@ model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1
 
 
 data1 = DataLoader(model_path)
-data1.print_info()
-print(params)
+docs1 = np.load(model_path+'/screens.npy', allow_pickle=True)
 projector1 = DataProjector(data1, params, model_path)
 projector1.generate_latent_space()
 projector1.create_feature_matrices()
-allDataLoad['C1MR3058G940'] = (data1, projector1)
+allDataLoad['C1MR3058G940'] = (data1, projector1, docs1)
 
 # Index
 @app.route('/index', methods=['GET', 'POST'])
@@ -565,7 +564,7 @@ def predict():
                                     scored_terms[sorted_views_list[3][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[4])) if data.feature_names[sorted_views_list[3][i]] != ""]
         print("webqueries")
         print(sorted_docs_valid[1])
-        docs = np.load(model_path+'/screens.npy', allow_pickle=True)
+        docs = allDataLoad[userid][2]
         print(len(docs))
         print(docs[0].oslog)
         # TODO: how many document? I can also send the estimated relevance.
