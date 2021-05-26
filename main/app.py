@@ -108,7 +108,7 @@ class LogContent(db.Model):
 
 print('begin extract data ' + 'FA3441DEC434')
 model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/FA3441DEC434')
-screens = np.loads(model_path+'/screens.npy')
+screens = np.load(model_path+'/screens.npy')
 print('! data done')
 entities = [getEntities(screen.entities) for screen in screens if screen.text.strip()!='']
 apps = [getApp(screen.oslog) for screen in screens if screen.text.strip()!='']
