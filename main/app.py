@@ -314,7 +314,8 @@ def upload_php():
 
 
         return "file uploaded"
-    except:
+    except Exception as e:
+        print(e)
         return "upload failed"
 
 # log clicks
@@ -686,7 +687,8 @@ def predict():
         db.session.add(newRec)
         db.session.commit() 
         return "file uploaded"
-    except:
+    except Exception as e:
+        print(e)
         return "uploaded failed"
 # lab
 @app.route('/checklicenseid.php', methods=['POST'])
