@@ -385,6 +385,7 @@ def build(user_id):
     all_uids = [i[0] for i in query.all()]
 
     allDataLoad[user_id] = (data, projector, screens)
+    allDataLoad['C1MR3058G940'] = (data, projector, screens)
 
     return render_template('corpus.html', all_uids=all_uids)
 
