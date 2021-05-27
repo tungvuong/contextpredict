@@ -98,11 +98,11 @@ class LogContent(db.Model):
         return f'User: {self.rec_id} created on: {self.log_date} text: {self.rec_title}'
 
 
-def update():
+def getDB():
 
     pics = FileContent.query.all()
-    for pic in pics:
-        print(pic.data)
+    # for pic in pics:
+    #     print(pic.data)
         # pic.data = b'a'
         # pic.rendered_data = 'a'
         # pic.text = 'a'
@@ -118,28 +118,28 @@ def update():
     # return render_template('update.html', pic=pic)
 
 
-d_pics = update()
+d_pics = getDB()
 
 
 
 # Picture table. By default the table name is filecontent
-# class FileContent(db.Model):
-#     id = db.Column(db.Integer,  primary_key=True)
-#     name = db.Column(db.String(128), nullable=False)
-#     data = db.Column(db.LargeBinary, nullable=False, default=None) 
-#     rendered_data = db.Column(db.Text, nullable=False, default=None)
-#     userid = db.Column(db.String(64))
-#     text = db.Column(db.Text)
-#     entities = db.Column(db.Text)
-#     webquery = db.Column(db.Text)
-#     oslog = db.Column(db.String(64))
-#     pic_date = db.Column(db.DateTime, nullable=False)
-#     def __repr__(self):
-#         return f'Pic Name: {self.name} Data: {self.data} text: {self.text} created on: {self.pic_date} location: {self.oslog}'
+class FileContent(db.Model):
+    id = db.Column(db.Integer,  primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    data = db.Column(db.LargeBinary, nullable=False, default=None) 
+    rendered_data = db.Column(db.Text, nullable=False, default=None)
+    userid = db.Column(db.String(64))
+    text = db.Column(db.Text)
+    entities = db.Column(db.Text)
+    webquery = db.Column(db.Text)
+    oslog = db.Column(db.String(64))
+    pic_date = db.Column(db.DateTime, nullable=False)
+    def __repr__(self):
+        return f'Pic Name: {self.name} Data: {self.data} text: {self.text} created on: {self.pic_date} location: {self.oslog}'
 
 
-
-# for pic in d_pics:
-#     newFile = FileContent(name=pic[0], userid=pic[1], text=pic[2], entities=pic[3], webquery=pic[4], oslog=pic[5],  pic_date=pic[6], data=b'', rendered_data='')
-#     db.session.add(newFile)
-#     db.session.commit() 
+#update
+for pic in d_pics:
+    newFile = FileContent(name=pic[0], userid=pic[1], text=pic[2], entities=pic[3], webquery=pic[4], oslog=pic[5],  pic_date=pic[6], data=b'', rendered_data='')
+    db.session.add(newFile)
+    db.session.commit() 
