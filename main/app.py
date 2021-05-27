@@ -55,7 +55,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 cors = CORS(app, resources={r"/retrieve": {"origins": "*"}, r"/logclick": {"origins": "*"}})
 db = SQLAlchemy(app)
 allDataLoad = {}
-model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
+# model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
 
 
 
@@ -70,8 +70,8 @@ class FileContent(db.Model):
 
     id = db.Column(db.Integer,  primary_key=True)
     name = db.Column(db.String(128), nullable=False)
-    data = db.Column(db.LargeBinary, nullable=False) 
-    rendered_data = db.Column(db.Text, nullable=False)
+    data = db.Column(db.LargeBinary, nullable=False, default=b'') 
+    rendered_data = db.Column(db.Text, nullable=False, default='')
     userid = db.Column(db.String(64))
     text = db.Column(db.Text)
     entities = db.Column(db.Text)
@@ -104,10 +104,20 @@ class LogContent(db.Model):
     def __repr__(self):
         return f'User: {self.rec_id} created on: {self.log_date} text: {self.rec_title}'
 
-
+class Pic:
+    def __init__(self):
+        self.id = None
+        self.name = None
+        self.userid = None
+        self.text = None
+        self.entities = None
+        self.webquery = None
+        self.oslog = None
+        self.pic_date = None
+        self.rendered_data = None
 
 # print('begin extract data ' + 'FA3441DEC434')
-model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
+# model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
 # Path(model_path).mkdir(parents=True, exist_ok=True)
 # # file_data = FileContent.query.filter((FileContent.userid == 'FA3441DEC434')).order_by(asc(FileContent.pic_date))
 # screens = np.load(model_path+'/screens.npy', allow_pickle=True)
@@ -122,12 +132,12 @@ model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1
 # print('! buildCorpus done')
 
 
-data1 = DataLoader(model_path)
-docs1 = np.load(model_path+'/screens.npy', allow_pickle=True)
-projector1 = DataProjector(data1, params, model_path)
-projector1.generate_latent_space()
-projector1.create_feature_matrices()
-allDataLoad['C1MR3058G940'] = (data1, projector1, docs1)
+# data1 = DataLoader(model_path)
+# docs1 = np.load(model_path+'/screens.npy', allow_pickle=True)
+# projector1 = DataProjector(data1, params, model_path)
+# projector1.generate_latent_space()
+# projector1.create_feature_matrices()
+# allDataLoad['C1MR3058G940'] = (data1, projector1, docs1)
 
 # Index
 @app.route('/index', methods=['GET', 'POST'])
@@ -135,10 +145,30 @@ allDataLoad['C1MR3058G940'] = (data1, projector1, docs1)
 def index():
 
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=(60*24*0)+(60*0))
-    # pics = FileContent.query.filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
-    pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
+    rounded = now - timedelta(minutes=(60*24*0)+(60*1))
+    pics = FileContent.query.filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
+    # pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
+    tmp_pics = []
+    for pic in pics:
+        _pic = Pic()
+        pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/'+pic.userid)
+        pic_fname = pic_path+'/'+json.loads(pic.oslog)['filename']+'.jpeg'
+        roi_img = Image.open(pic_fname)
+        img_byte_arr = io.BytesIO()
+        roi_img.save(img_byte_arr, format='JPEG')
+        img_byte_arr = img_byte_arr.getvalue()
 
+        _pic.rendered_data = render_picture(img_byte_arr)
+        _pic.id = pic.id
+        _pic.name = pic.name
+        _pic.userid = pic.userid
+        _pic.text = pic.text
+        _pic.entities = pic.entities
+        _pic.webquery = pic.webquery
+        _pic.oslog = pic.oslog
+        _pic.pic_date = pic.pic_date
+        tmp_pics.append(_pic)
+    pics = tmp_pics
     if pics: # This is because when you first run the app, if no pics in the db it will give you an error
         all_pics = pics
         if request.method == 'POST':
@@ -154,9 +184,31 @@ def index():
 @app.route('/query')
 def query():
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=(60*24*0)+(60*0))
-    # all_pics = FileContent.query.filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
-    all_pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
+    rounded = now - timedelta(minutes=(60*24*0)+(60*1))
+    all_pics = FileContent.query.filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
+    # all_pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
+
+    tmp_pics = []
+    for pic in all_pics:
+        _pic = Pic()
+        pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/'+pic.userid)
+        pic_fname = pic_path+'/'+json.loads(pic.oslog)['filename']+'.jpeg'
+        roi_img = Image.open(pic_fname)
+        img_byte_arr = io.BytesIO()
+        roi_img.save(img_byte_arr, format='JPEG')
+        img_byte_arr = img_byte_arr.getvalue()
+
+        _pic.rendered_data = render_picture(img_byte_arr)
+        _pic.id = pic.id
+        _pic.name = pic.name
+        _pic.userid = pic.userid
+        _pic.text = pic.text
+        _pic.entities = pic.entities
+        _pic.webquery = pic.webquery
+        _pic.oslog = pic.oslog
+        _pic.pic_date = pic.pic_date
+        tmp_pics.append(_pic)
+    all_pics = tmp_pics
 
     return render_template('query.html', all_pic=all_pics[:10])
 
@@ -179,12 +231,11 @@ def upload():
 
     file = request.files['inputFile']
     data = file.read()
-    render_file = render_picture(data)
     text = request.form['text']
     oslog = request.form['location']
     userid = ''
 
-    newFile = FileContent(name=file.filename, data=data, rendered_data=render_file, text=text, oslog=oslog, userid=userid, pic_date=datetime.utcnow, entities='{}')
+    newFile = FileContent(name=file.filename, data=data, text=text, oslog=oslog, userid=userid, pic_date=datetime.utcnow, entities='{}')
     db.session.add(newFile)
     db.session.commit() 
     full_name = newFile.name
@@ -193,14 +244,14 @@ def upload():
     file_type = full_name[1]
     file_date = newFile.pic_date
     file_location = newFile.oslog
-    file_render = newFile.rendered_data
+    file_render = None #newFile.rendered_data
     file_id = newFile.id
     file_text = newFile.text
 
     return render_template('upload.html', file_name=file_name, file_type=file_type, file_date=file_date, file_location=file_location, file_render=file_render, file_id=file_id, file_text=file_text)
 
 # upload screens
-@app.route('/upload.php', methods=['POST'])
+@app.route('/upload.php', methods=['GET','POST'])
 def upload_php():
     try:
         lang = request.form['lang']
@@ -208,8 +259,8 @@ def upload_php():
         userid = request.form['username']
         file = request.files['image']
         data = file.read()
-        render_file = render_picture(data)
         pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
+        
         # most recent frame
         # docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
         now = datetime.utcnow()
@@ -219,9 +270,18 @@ def upload_php():
         prev = None
         change = None
         isChange = True
+
+        # make dir for pics if not exists
+        pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/'+userid)
+        Path(pic_path).mkdir(parents=True, exist_ok=True)
+        curr_img_fname = pic_path+'/'+json.loads(request.form['extra'])['filename']+'.jpeg'
+        curr.save(curr_img_fname)
+        curr = Image.open(curr_img_fname)
+
         # if sql result is not empty
         if docs.count()>0:
-            prev = Image.open(BytesIO(docs[-1].data))
+            prev_img_fname = pic_path+'/'+json.loads(docs[-1].oslog)['filename']+'.jpeg'
+            prev = Image.open(prev_img_fname)
             # if user use the same app --> otherwise user switch app and we run ocr on the entire screen
             if (curr.size == prev.size):
                 # only change is extracted
@@ -230,6 +290,7 @@ def upload_php():
                 if (diff.getbbox()):
                     print(userid, 'information change', diff.getbbox())
                     change = curr.crop((diff.getbbox()))
+                    change.save(pic_path+'/change_'+json.loads(request.form['extra'])['filename']+'.jpeg')
                 else:
                     print(userid, 'no change')
                     isChange = False
@@ -247,9 +308,10 @@ def upload_php():
         entities = detect_entities(text) if text!='' else '{}'
         webquery = getWebQuery(oslog)
 
-        newFile = FileContent(name=file.filename.split('/')[-1], data=data, rendered_data=render_file, text=text, oslog=oslog, userid=userid, pic_date=pic_date, entities=entities, webquery=webquery)
+        newFile = FileContent(name=file.filename.split('/')[-1], text=text, oslog=oslog, userid=userid, pic_date=pic_date, entities=entities, webquery=webquery)
         db.session.add(newFile)
         db.session.commit() 
+
 
         return "file uploaded"
     except:
@@ -296,15 +358,15 @@ def build(user_id):
     model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+user_id)
     Path(model_path).mkdir(parents=True, exist_ok=True)
     file_data = FileContent.query.filter((FileContent.userid == user_id)).order_by(asc(FileContent.pic_date))
-    screens = [screen.text for screen in file_data if screen.text.strip()!='']
+    screens = [screen for screen in file_data if screen.text.strip()!='']
     np.save(model_path+'/screens.npy', screens)
     print('! data done')
-    print('len data: ' + file_data.count())
+    texts = [screen.text for screen in screens if screen.text.strip()!='']
     entities = [getEntities(screen.entities) for screen in file_data if screen.text.strip()!='']
     apps = [getApp(screen.oslog) for screen in file_data if screen.text.strip()!='']
     docs = [getDoc(screen.oslog) for screen in file_data if screen.text.strip()!='']
     webqueries = [getWebQuery(screen.oslog) for screen in file_data if screen.text.strip()!='']
-    buildCorpus(model_path,screens,entities,apps,docs,webqueries)
+    buildCorpus(model_path,texts,entities,apps,docs,webqueries)
 
     print('! buildCorpus done')
 
@@ -320,6 +382,8 @@ def build(user_id):
 
     query = FileContent.query.with_entities(FileContent.userid.distinct())
     all_uids = [i[0] for i in query.all()]
+
+    allDataLoad[user_id] = (data, projector, screens)
 
     return render_template('corpus.html', all_uids=all_uids)
 
@@ -398,14 +462,23 @@ def predict():
         query_docs = FileContent.query.filter_by(userid=userid).filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
         docs = [doc for doc in query_docs if doc.text.strip()!='']
 
+        
         curr = Image.open(BytesIO(data))
         prev = None
         change = None
         isChange = True
+
+        # make dir for pics if not exists
+        pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/'+userid)
+        Path(pic_path).mkdir(parents=True, exist_ok=True)
+        curr_img_fname = pic_path+'/'+json.loads(request.form['extra'])['filename']+'.jpeg'
+        curr.save(curr_img_fname)
+        curr = Image.open(curr_img_fname)
+
         # if sql result is not empty
-        # if docs.count()>0:
         if len(docs)>0:
-            prev = Image.open(BytesIO(docs[-1].data))
+            prev_img_fname = pic_path+'/'+json.loads(docs[-1].oslog)['filename']+'.jpeg'
+            prev = Image.open(prev_img_fname)
             # if user use the same app --> otherwise user switch app and we run ocr on the entire screen
             if (curr.size == prev.size):
                 # only change is extracted
@@ -414,6 +487,7 @@ def predict():
                 if (diff.getbbox()):
                     print(userid, 'information change', diff.getbbox())
                     change = curr.crop((diff.getbbox()))
+                    change.save(pic_path+'/change_'+json.loads(request.form['extra'])['filename']+'.jpeg')
                 else:
                     print(userid, 'no change')
                     isChange = False
@@ -429,15 +503,15 @@ def predict():
         else:
             print(userid, 'dont upload')
             return "file uploaded" 
-
         # ibm nlp only there is information change
         entities = detect_entities(text) if text!='' else ''
         webquery = getWebQuery(oslog)
 
 
-        newFile = FileContent(name=file.filename.split('/')[-1], data=data, rendered_data=render_file, text=text, oslog=oslog, userid=userid, pic_date=pic_date, entities=entities, webquery=webquery)
+        newFile = FileContent(name=file.filename.split('/')[-1], text=text, oslog=oslog, userid=userid, pic_date=pic_date, entities=entities, webquery=webquery)
         db.session.add(newFile)
         db.session.commit() 
+        print('uploaded')
 
         # Predict here
         # get again most recent frame
@@ -456,6 +530,7 @@ def predict():
         # projector.generate_latent_space()
         # projector.create_feature_matrices()
         data, projector =  allDataLoad[userid][0], allDataLoad[userid][1]
+        print('load model')
 
         pinned_item = []           # the items that are pinned in the frontend (needed for calculating pair similarity)
 
