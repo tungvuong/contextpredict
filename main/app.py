@@ -522,6 +522,7 @@ def predict():
         rounded = pic_date - timedelta(seconds=30)
         query_docs = FileContent.query.filter_by(userid=userid).order_by(asc(FileContent.pic_date))
         docs = [doc for doc in query_docs if doc.text.strip()!='']
+        recent = list(set([(json.loads(screen.oslog)['url'],getDoc(screen.oslog)) for screen in docs[-2:]]))
         model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
         # if userid in allDataLoad:
         # data = DataLoader(model_path)
@@ -654,7 +655,7 @@ def predict():
         data_output["pair_similarity"] = []
         print("pair_similarity")
         # input docs
-        data_output["recent_docs"] = list(set([(json.loads(screen.oslog)['url'],getDoc(screen.oslog)) for screen in docs[-2:]]))
+        data_output["recent_docs"] = recent
         print("recent_docs")
         # or this to allow feedback on recs
         # new_recommendations = []
