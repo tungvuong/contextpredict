@@ -394,7 +394,13 @@ def build(user_id):
 @app.route('/pic/<int:pic_id>.jpeg')
 def pic(pic_id):
     get_pic = FileContent.query.filter_by(id=pic_id).first()
-    response = make_response(get_pic.data)
+    pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/'+userid)
+    curr_img_fname = pic_path+'/'+json.loads(get_pic.oslog)['filename']+'.jpeg'
+    curr = Image.open(curr_img_fname)
+    img_byte_arr = io.BytesIO()
+    curr.save(img_byte_arr, format='JPEG')
+    img_byte_arr = img_byte_arr.getvalue()
+    response = make_response(img_byte_arr)
     response.headers.set('Content-Type', 'image/jpeg')
     #response.headers.set(
     #    'Content-Disposition', 'attachment', filename='%s.jpg' % pic_id)
