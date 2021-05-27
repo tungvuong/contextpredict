@@ -35,7 +35,7 @@ from flask_cors import CORS, cross_origin
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import desc, asc, or_
 
-basedir = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data1.sqlite')
+basedir = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'var/www/html/data.sqlite')
 
 
 app = Flask(__name__)
