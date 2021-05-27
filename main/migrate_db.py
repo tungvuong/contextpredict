@@ -59,17 +59,17 @@ app1.config['CORS_HEADERS'] = 'Content-Type'
 db1 = SQLAlchemy(app1)
 
 # Picture table. By default the table name is filecontent
-class FileContent(db.Model):
-    id = db.Column(db.Integer,  primary_key=True)
-    name = db.Column(db.String(128), nullable=False)
-    data = db.Column(db.LargeBinary, nullable=False, default=None) 
-    rendered_data = db.Column(db.Text, nullable=False, default=None)
-    userid = db.Column(db.String(64))
-    text = db.Column(db.Text)
-    entities = db.Column(db.Text)
-    webquery = db.Column(db.Text)
-    oslog = db.Column(db.String(64))
-    pic_date = db.Column(db.DateTime, nullable=False)
+class FileContent(db1.Model):
+    id = db1.Column(db1.Integer,  primary_key=True)
+    name = db1.Column(db1.String(128), nullable=False)
+    data = db1.Column(db1.LargeBinary, nullable=False, default=None) 
+    rendered_data = db1.Column(db.Text, nullable=False, default=None)
+    userid = db1.Column(db1.String(64))
+    text = db1.Column(db1.Text)
+    entities = db1.Column(db1.Text)
+    webquery = db1.Column(db1.Text)
+    oslog = db1.Column(db1.String(64))
+    pic_date = db1.Column(db1.DateTime, nullable=False)
     def __repr__(self):
         return f'Pic Name: {self.name} Data: {self.data} text: {self.text} created on: {self.pic_date} location: {self.oslog}'
 
@@ -123,7 +123,7 @@ d_pics = getDB()
 
 
 # Picture table. By default the table name is filecontent
-class FileContent(db.Model):
+class FileContent(db1.Model):
     id = db.Column(db.Integer,  primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     data = db.Column(db.LargeBinary, nullable=False, default=None) 
