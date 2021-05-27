@@ -123,7 +123,7 @@ d_pics = getDB()
 
 
 # Picture table. By default the table name is filecontent
-class FileContent(db1.Model):
+class FileContent(db.Model):
     id = db.Column(db.Integer,  primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     data = db.Column(db.LargeBinary, nullable=False, default=None) 
