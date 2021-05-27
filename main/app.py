@@ -394,7 +394,7 @@ def build(user_id):
 @app.route('/pic/<int:pic_id>.jpeg')
 def pic(pic_id):
     get_pic = FileContent.query.filter_by(id=pic_id).first()
-    pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/'+userid)
+    pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/'+get_pic.userid)
     curr_img_fname = pic_path+'/'+json.loads(get_pic.oslog)['filename']+'.jpeg'
     curr = Image.open(curr_img_fname)
     img_byte_arr = io.BytesIO()
