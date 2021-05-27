@@ -63,7 +63,7 @@ class FileContent(db1.Model):
     id = db1.Column(db1.Integer,  primary_key=True)
     name = db1.Column(db1.String(128), nullable=False)
     data = db1.Column(db1.LargeBinary, nullable=False, default=None) 
-    rendered_data = db1.Column(db.Text, nullable=False, default=None)
+    rendered_data = db1.Column(db1.Text, nullable=False, default=None)
     userid = db1.Column(db1.String(64))
     text = db1.Column(db1.Text)
     entities = db1.Column(db1.Text)
