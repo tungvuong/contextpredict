@@ -33,7 +33,7 @@ from flask_cors import CORS, cross_origin
 
 # FLask SQLAlchemy, Database
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import desc, asc
+from sqlalchemy import desc, asc, or_
 
 basedir = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data1.sqlite')
 
@@ -101,7 +101,7 @@ class LogContent(db.Model):
 def update():
     pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/FA3441DEC434')
     Path(pic_path).mkdir(parents=True, exist_ok=True)
-    pics = FileContent.query.filter_by(userid='FA3441DEC434')
+    pics = FileContent.query.filter_by(userid=='F83441DEC435')
     for pic in pics:
         print(pic.name)
         curr = Image.open(BytesIO(pic.data))
