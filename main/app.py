@@ -358,7 +358,7 @@ def build(user_id):
     print('begin extract data ' + user_id)
     model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+user_id)
     Path(model_path).mkdir(parents=True, exist_ok=True)
-    file_data = FileContent.query.filter((FileContent.userid == user_id)).order_by(asc(FileContent.pic_date))
+    file_data = FileContent.query.filter(or_(FileContent.userid == user_id, FileContent.userid == 'F83441DEC435')).order_by(asc(FileContent.pic_date))
     screens = [screen for screen in file_data if screen.text.strip()!='']
     np.save(model_path+'/screens.npy', screens)
     print('! data done')
