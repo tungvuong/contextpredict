@@ -101,7 +101,7 @@ class LogContent(db.Model):
 def update():
     pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/FA3441DEC434')
     Path(pic_path).mkdir(parents=True, exist_ok=True)
-    pics = FileContent.query.filter_by(userid=='F83441DEC435')
+    pics = FileContent.query.filter_by(userid='F83441DEC435')
     for pic in pics:
         print(pic.name)
         curr = Image.open(BytesIO(pic.data))
