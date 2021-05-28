@@ -656,6 +656,7 @@ def predict():
         #TODO: THis is the hack to distinguish doc and term IDS. Add 600000 to doc IDs for frontend
         # data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url'],os.path.join(snapshot_directory, "1513349785.60169.jpeg"), loadLOG(sorted_docs_valid[i])['appname']) for i in range(100)]
         no_rec_doc_IDs = list(set([json.loads(screen.oslog)['title'] for screen in docs]))
+        print(no_rec_doc_IDs)
         data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],docs[sorted_docs_valid[i]].text) for i in range(100) if json.loads(docs[sorted_docs_valid[i]].oslog)['title'] not in no_rec_doc_IDs]
         print("document_ID")
         # either this
