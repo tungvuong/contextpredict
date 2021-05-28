@@ -525,8 +525,8 @@ def predict():
         # get again most recent frame
         # query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
         now = datetime.utcnow()
-        rounded = pic_date - timedelta(seconds=30)
-        query_docs = FileContent.query.filter_by(userid=userid).order_by(asc(FileContent.pic_date))
+        rounded = pic_date - timedelta(seconds=60)
+        query_docs = FileContent.query.filter_by(userid=userid).filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
         docs = [doc for doc in query_docs if doc.text.strip()!='']
         recent = list(set([(json.loads(screen.oslog)['url'],getDoc(screen.oslog)) for screen in docs[-2:]]))
         model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
@@ -655,7 +655,8 @@ def predict():
         #data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url']) for i in range(params["suggestion_count"])]
         #TODO: THis is the hack to distinguish doc and term IDS. Add 600000 to doc IDs for frontend
         # data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url'],os.path.join(snapshot_directory, "1513349785.60169.jpeg"), loadLOG(sorted_docs_valid[i])['appname']) for i in range(100)]
-        data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],docs[sorted_docs_valid[i]].text) for i in range(100)]
+        no_rec_doc_IDs = list(set([json.loads(screen.oslog)['title'] for screen in docs]))
+        data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],docs[sorted_docs_valid[i]].text) for i in range(100) if json.loads(docs[sorted_docs_valid[i]].oslog)['title'] not in no_rec_doc_IDs]
         print("document_ID")
         # either this
         data_output["pair_similarity"] = []
