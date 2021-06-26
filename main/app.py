@@ -717,6 +717,14 @@ def retrieve(path):
     return json.dumps(json.loads(all_recs[-1].text))
 
 # Retrieve docs, webqueries
+@app.route('/retrieveAll')
+@cross_origin(origin='*',headers=['Content- Type','Authorization'])
+def retrieveAll(path):
+    all_recs = RecContent.query.order_by(asc(RecContent.rec_date)).all()
+    res = {rec.id: json.loads(rec.text) for rec in all_recs}
+    return json.dumps(res)
+
+# Retrieve docs, webqueries
 @app.route('/csv/<path:path>')
 @cross_origin(origin='*',headers=['Content- Type','Authorization'])
 def csv(path):
