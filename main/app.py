@@ -714,7 +714,10 @@ def licenseid():
 def retrieve(path):
     # userid = 'C1MR3058G940'
     all_recs = RecContent.query.filter_by(userid=path).order_by(asc(RecContent.rec_date))
-    return json.dumps(json.loads(all_recs[-1].text))
+    res = {}
+    if all_recs.count()>0:
+        res = json.loads(all_recs[-1].text)
+    return json.dumps(res)
 
 # Retrieve docs, webqueries
 @app.route('/retrieveAll')
