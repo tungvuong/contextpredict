@@ -721,7 +721,7 @@ def retrieve(path):
 @cross_origin(origin='*',headers=['Content- Type','Authorization'])
 def retrieveAll():
     all_recs = RecContent.query.order_by(asc(RecContent.rec_date)).all()
-    res = {rec.id: {'applications':json.loads(rec.text)['applications'], 'webqueries':json.loads(rec.text)['webqueries']} for rec in all_recs[:100]}
+    res = {rec.id: {'applications':json.loads(rec.text)['applications']} for rec in all_recs[:100]}
     return json.dumps(res)
 
 # Retrieve docs, webqueries
