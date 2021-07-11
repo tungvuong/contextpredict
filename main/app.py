@@ -260,8 +260,8 @@ def upload_php():
         userid = request.form['username']
         file = request.files['image']
         data = file.read()
-        pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
         print("pass!")
+        pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
         # most recent frame
         # docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
         now = datetime.utcnow()
