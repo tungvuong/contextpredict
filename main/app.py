@@ -258,9 +258,9 @@ def upload_php():
         lang = request.form['lang']
         oslog = request.form['extra']
         userid = request.form['username']
-        file = request.files['image']
+        file = request.files['image'][1]
+        print(file)
         data = file.read()
-        print(data)
         pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
         
         # most recent frame
