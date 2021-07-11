@@ -260,8 +260,8 @@ def upload_php():
         userid = request.form['username']
         file = request.files['image']
         data = file.read()
-        print(oslog)
-        print(json.loads(oslog))
+        print(oslog.replace('\\',''))
+        print(json.loads(oslog.replace('\\','')))
         pic_date = filenameToTime(json.loads(oslog)['filename'])
         # most recent frame
         # docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
