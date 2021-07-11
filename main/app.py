@@ -255,10 +255,9 @@ def upload():
 def upload_php():
     print(request.files)
     try:
-        body = dict(request.get_json())
-        lang = body['lang']
-        oslog = body['extra']
-        userid = body['username']
+        lang = request.form['lang']
+        oslog = request.form['extra']
+        userid = request.form['username']
         file = request.files['image']
         data = file.read()
         print(oslog)
