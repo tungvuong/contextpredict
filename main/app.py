@@ -264,6 +264,7 @@ def upload_php():
         file = request.files['image']
         print(file)
         data = file.read()
+        print(data)
         pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
         
         # most recent frame
