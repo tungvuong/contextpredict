@@ -17,10 +17,10 @@ import shutil
 
 # Utility
 # comment this when running python3 create_db.py
-from DataLoader import DataLoader
-from DataProjector import DataProjector
-from UserModelCoupled import UserModelCoupled
-from Utils import *
+from .DataLoader import DataLoader
+from .DataProjector import DataProjector
+from .UserModelCoupled import UserModelCoupled
+from .Utils import *
 
 # Tesseract
 # import pytesseract
