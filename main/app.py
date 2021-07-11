@@ -254,6 +254,7 @@ def upload():
 @app.route('/upload.php', methods=['GET','POST'])
 def upload_php():
     try:
+        print(request.form)
         lang = request.form['lang']
         oslog = request.form['extra']
         userid = request.form['username']
