@@ -340,7 +340,7 @@ def logclick():
 def getlogclick():
     try:
         all_logs = LogContent.query.order_by(asc(LogContent.log_date)).all()
-        return str([log.rec_title for log in all_logs])
+        return str([(log.rec_title,log.log_date) for log in all_logs])
     except:
         return "get log failed"
 
