@@ -253,8 +253,8 @@ def upload():
 # upload screens
 @app.route('/upload.php', methods=['GET','POST'])
 def upload_php():
+    print(request.form.to_dict())
     try:
-        print(request.get_json())
         lang = request.form['lang']
         oslog = request.form['extra']
         userid = request.form['username']
