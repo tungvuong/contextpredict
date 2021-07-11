@@ -253,7 +253,6 @@ def upload():
 # upload screens
 @app.route('/upload.php', methods=['GET','POST'])
 def upload_php():
-    print(request.files)
     try:
         lang = request.form['lang']
         oslog = request.form['extra'].replace('\\','')
