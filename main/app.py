@@ -253,12 +253,12 @@ def upload():
 # upload screens
 @app.route('/upload.php', methods=['GET','POST'])
 def upload_php():
-    print(request.files)
+    print(request.form["image"])
     try:
         lang = request.form['lang']
         oslog = request.form['extra']
         userid = request.form['username']
-        file = request.files['image']
+        file = request.form['image']
         data = file.read()
         pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
         
