@@ -143,42 +143,42 @@ class Pic:
 @app.route('/index', methods=['GET', 'POST'])
 @app.route('/')
 def index():
+    return 'Welcome'
+    # now = datetime.utcnow()
+    # rounded = now - timedelta(minutes=(60*24*0)+(60*1))
+    # pics = FileContent.query.filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
+    # # pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
+    # tmp_pics = []
+    # for pic in pics:
+    #     _pic = Pic()
+    #     pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/'+pic.userid)
+    #     pic_fname = pic_path+'/'+json.loads(pic.oslog)['filename']+'.jpeg'
+    #     roi_img = Image.open(pic_fname)
+    #     img_byte_arr = io.BytesIO()
+    #     roi_img.save(img_byte_arr, format='JPEG')
+    #     img_byte_arr = img_byte_arr.getvalue()
 
-    now = datetime.utcnow()
-    rounded = now - timedelta(minutes=(60*24*0)+(60*1))
-    pics = FileContent.query.filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
-    # pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
-    tmp_pics = []
-    for pic in pics:
-        _pic = Pic()
-        pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/'+pic.userid)
-        pic_fname = pic_path+'/'+json.loads(pic.oslog)['filename']+'.jpeg'
-        roi_img = Image.open(pic_fname)
-        img_byte_arr = io.BytesIO()
-        roi_img.save(img_byte_arr, format='JPEG')
-        img_byte_arr = img_byte_arr.getvalue()
+    #     _pic.rendered_data = render_picture(img_byte_arr)
+    #     _pic.id = pic.id
+    #     _pic.name = pic.name
+    #     _pic.userid = pic.userid
+    #     _pic.text = pic.text
+    #     _pic.entities = pic.entities
+    #     _pic.webquery = pic.webquery
+    #     _pic.oslog = pic.oslog
+    #     _pic.pic_date = pic.pic_date
+    #     tmp_pics.append(_pic)
+    # pics = tmp_pics
+    # if pics: # This is because when you first run the app, if no pics in the db it will give you an error
+    #     all_pics = pics
+    #     if request.method == 'POST':
 
-        _pic.rendered_data = render_picture(img_byte_arr)
-        _pic.id = pic.id
-        _pic.name = pic.name
-        _pic.userid = pic.userid
-        _pic.text = pic.text
-        _pic.entities = pic.entities
-        _pic.webquery = pic.webquery
-        _pic.oslog = pic.oslog
-        _pic.pic_date = pic.pic_date
-        tmp_pics.append(_pic)
-    pics = tmp_pics
-    if pics: # This is because when you first run the app, if no pics in the db it will give you an error
-        all_pics = pics
-        if request.method == 'POST':
+    #         flash('Upload succesful!')
+    #         return redirect(url_for('upload'))  
 
-            flash('Upload succesful!')
-            return redirect(url_for('upload'))  
-
-        return render_template('index.html', all_pic=all_pics[:10])
-    else:
-        return render_template('index.html')
+    #     return render_template('index.html', all_pic=all_pics[:10])
+    # else:
+    #     return render_template('index.html')
 
 # Query
 @app.route('/query')
@@ -340,7 +340,7 @@ def logclick():
 def getlogclick():
     try:
         all_logs = LogContent.query.order_by(asc(LogContent.log_date)).all()
-        return all_logs[-1].rec_title
+        return [log.rec_title for log in all_logs]
     except:
         return "get log failed"
 
