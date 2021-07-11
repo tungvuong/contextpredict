@@ -256,17 +256,12 @@ def upload_php():
     print(request.files)
     try:
         lang = request.form['lang']
-        print(lang)
         oslog = request.form['extra']
-        print(oslog)
         userid = request.form['username']
-        print(userid)
         file = request.files['image']
-        print(file)
         data = file.read()
-        print(data)
         pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
-        
+        print("pass!")
         # most recent frame
         # docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
         now = datetime.utcnow()
