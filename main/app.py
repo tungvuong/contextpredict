@@ -253,7 +253,7 @@ def upload():
 # upload screens
 @app.route('/upload.php', methods=['GET','POST'])
 def upload_php():
-    print(request.form["image"])
+    print(request.form)
     try:
         lang = request.form['lang']
         oslog = request.form['extra']
