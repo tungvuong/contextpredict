@@ -256,9 +256,13 @@ def upload_php():
     print(request.files)
     try:
         lang = request.form['lang']
+        print(lang)
         oslog = request.form['extra']
+        print(oslog)
         userid = request.form['username']
+        print(userid)
         file = request.files['image']
+        print(file)
         data = file.read()
         pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
         
