@@ -254,7 +254,7 @@ def upload():
 @app.route('/upload.php', methods=['GET','POST'])
 def upload_php():
     # body = dict(request)
-    print(request)
+    print(request.data)
     try:
         body = dict(request.get_json())
         print(body)
