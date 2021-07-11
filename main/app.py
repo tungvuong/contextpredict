@@ -255,14 +255,15 @@ def upload():
 def upload_php():
     print(request.files)
     try:
-        lang = request.form['lang']
-        oslog = request.form['extra']
-        userid = request.form['username']
+        body = dict(request.get_json())
+        lang = body['lang']
+        oslog = body['extra']
+        userid = body['username']
         file = request.files['image']
         data = file.read()
         print(oslog)
         print(json.loads(oslog))
-        pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
+        pic_date = filenameToTime(json.loads(oslog)['filename'])
         # most recent frame
         # docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
         now = datetime.utcnow()
@@ -276,7 +277,7 @@ def upload_php():
         # make dir for pics if not exists
         pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/'+userid)
         Path(pic_path).mkdir(parents=True, exist_ok=True)
-        curr_img_fname = pic_path+'/'+json.loads(request.form['extra'])['filename']+'.jpeg'
+        curr_img_fname = pic_path+'/'+json.loads(oslog)['filename']+'.jpeg'
         curr.save(curr_img_fname)
         curr = Image.open(curr_img_fname)
 
@@ -292,7 +293,7 @@ def upload_php():
                 if (diff.getbbox()):
                     print(userid, 'information change', diff.getbbox())
                     change = curr.crop((diff.getbbox()))
-                    change.save(pic_path+'/change_'+json.loads(request.form['extra'])['filename']+'.jpeg')
+                    change.save(pic_path+'/change_'+json.loads(oslog)['filename']+'.jpeg')
                 else:
                     print(userid, 'no change')
                     isChange = False
