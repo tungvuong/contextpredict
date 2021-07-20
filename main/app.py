@@ -320,6 +320,8 @@ def upload_php():
 # log clicks
 @app.route('/logclick', methods=['POST'])
 def logclick():
+    print(request.form)
+    print(request.get_json())
     try:
         rec_id = request.form['rec_id']
         rec_title = request.form['rec_title']
