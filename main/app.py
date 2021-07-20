@@ -318,10 +318,11 @@ def upload_php():
         return "upload failed"
 
 # log clicks
-@app.route('/logclick', methods=['GET', 'POST'])
+@app.route('/logclick', methods=['POST'])
 def logclick():
     print(request.form)
     print(request.get_json())
+    print(request.form['rec_id'])
     try:
         rec_id = request.form['rec_id']
         rec_title = request.form['rec_title']
