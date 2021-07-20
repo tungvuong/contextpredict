@@ -320,12 +320,12 @@ def upload_php():
 # log clicks
 @app.route('/logclick', methods=['GET', 'POST'])
 def logclick():
+    print(request.form)
     try:
         rec_id = request.form['rec_id']
         rec_title = request.form['rec_title']
         rec_url = request.form['rec_url']
         userid = request.form['userid']
-        print(rec_id, rec_title, rec_url, userid)
 
         newLog = LogContent(rec_id=rec_id, rec_title=rec_title, rec_url=rec_url, userid=userid)
         db.session.add(newLog)
