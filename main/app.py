@@ -320,8 +320,6 @@ def upload_php():
 # log clicks
 @app.route('/logclick', methods=['POST'])
 def logclick():
-    print(request.form)
-    print(request.get_json())
     try:
         rec_id = request.form['rec_id']
         rec_title = request.form['rec_title']
@@ -341,7 +339,7 @@ def logclick():
 def getlogclick():
     try:
         all_logs = LogContent.query.order_by(asc(LogContent.log_date)).all()
-        return str([(log.rec_title,log.log_date) for log in all_logs])
+        return str([(log.rec_title,log.log_date,log.userid) for log in all_logs])
     except:
         return "get log failed"
 
