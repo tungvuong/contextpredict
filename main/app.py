@@ -659,7 +659,7 @@ def predict():
 
         # data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],docs[sorted_docs_valid[i]].text) for i in range(100) if json.loads(docs[sorted_docs_valid[i]].oslog)['title'] not in no_rec_doc_IDs]
         
-        data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],docs[sorted_docs_valid[i]].text) for i in range(100)]
+        data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],"") for i in range(200)]
         print("document_ID")
         # either this
         data_output["pair_similarity"] = []
@@ -821,19 +821,19 @@ def csv(path):
     f_kw = dict(sorted(f_kw.items()))
     f_app = dict(sorted(f_app.items()))
 
-    csv = 'Name,Relevance\n'
+    csv = 'Relevance,Name\n'
     csv += '---- DOCUMENT ----,\n'
     for info, value in f_docs.items():
-        csv+=(info+",\n")
+        csv+=(","+info+",\n")
     csv += '---- WEB QUERIES ----,\n'
     for info, value in f_queries.items():
-        csv+=(info+",\n")
+        csv+=(","+info+",\n")
     csv += '---- KEYWORDS ----,\n'
     for info, value in f_kw.items():
-        csv+=(info+",\n")
+        csv+=(","+info+",\n")
     csv += '---- APPLICATIONS ----,\n'
     for info, value in f_app.items():
-        csv+=(info+",\n")
+        csv+=(","+info+",\n")
 
     return Response(
         csv,
