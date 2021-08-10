@@ -731,7 +731,7 @@ def retrieveAll():
 @cross_origin(origin='*',headers=['Content- Type','Authorization'])
 def csv(path):
     now = datetime.utcnow()
-    rounded = now - timedelta(minutes=15)
+    rounded = now - timedelta(minutes=86400)
     all_recs = RecContent.query.filter_by(userid=path).filter(RecContent.rec_date >= rounded).order_by(asc(RecContent.rec_date))
     print(rounded, now)
     r_docs = defaultdict(int)
