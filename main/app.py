@@ -712,7 +712,8 @@ def licenseid():
 @cross_origin(origin='*',headers=['Content- Type','Authorization'])
 def retrieve(path):
     # userid = 'C1MR3058G940'
-    all_recs = RecContent.query.filter_by(userid=path).order_by(asc(RecContent.rec_date))
+    # all_recs = RecContent.query.filter_by(userid=path).order_by(asc(RecContent.rec_date))
+    all_recs = RecContent.query.order_by(asc(RecContent.rec_date))
     res = {}
     if all_recs.count()>0:
         res = json.loads(all_recs[-1].text)
