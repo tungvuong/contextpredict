@@ -445,10 +445,10 @@ def predict():
     try:
         file = request.files['image']
         data = file.read()
-        oslog = request.form['extra']
+        oslog = request.form['extra'].replace('\\','')
         userid = request.form['username']
         lang = request.form['lang']
-        pic_date = filenameToTime(json.loads(request.form['extra'])['filename'])
+        pic_date = filenameToTime(json.loads(oslog)['filename'])
         og_img = Image.open(file.stream)
 
         # crop in case of ui in the chrome screen
@@ -478,7 +478,7 @@ def predict():
         # make dir for pics if not exists
         pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/'+userid)
         Path(pic_path).mkdir(parents=True, exist_ok=True)
-        curr_img_fname = pic_path+'/'+json.loads(request.form['extra'])['filename']+'.jpeg'
+        curr_img_fname = pic_path+'/'+json.loads(oslog)['filename']+'.jpeg'
         curr.save(curr_img_fname)
         curr = Image.open(curr_img_fname)
 
@@ -494,7 +494,7 @@ def predict():
                 if (diff.getbbox()):
                     print(userid, 'information change', diff.getbbox())
                     change = curr.crop((diff.getbbox()))
-                    change.save(pic_path+'/change_'+json.loads(request.form['extra'])['filename']+'.jpeg')
+                    change.save(pic_path+'/change_'+json.loads(oslog)['filename']+'.jpeg')
                 else:
                     print(userid, 'no change')
                     isChange = False
