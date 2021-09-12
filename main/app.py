@@ -57,6 +57,13 @@ db = SQLAlchemy(app)
 allDataLoad = {}
 # model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
 
+selected_terms = []        # ID of terms that the user has given feedback to
+feedback_terms = []        # feedback value on the selected terms
+recommended_terms = []     # list of ID of terms that have been recommended to the user
+selected_docs = []         # ID of snapshots that the user has given feedback to (may not be available in practice)
+feedback_docs = []         # feedback value on the selected snapshots (may not be available in practice)
+currently_shown = []       # currently shown items in the frontend (not used at the moment, but let's keep it!)
+pinned_item = []           # the items that are pinned in the frontend (needed for calculating pair similarity)
 
 
 # Picture table. By default the table name is filecontent
@@ -357,7 +364,7 @@ def build(user_id):
     print('begin extract data ' + user_id)
     model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+user_id)
     Path(model_path).mkdir(parents=True, exist_ok=True)
-    file_data = FileContent.query.filter(or_(FileContent.userid == user_id, FileContent.userid == 'F83441DEC435')).order_by(asc(FileContent.pic_date))
+    file_data = FileContent.query.filter(FileContent.userid == user_id).order_by(asc(FileContent.pic_date))
     screens = [screen for screen in file_data if screen.text.strip()!='']
     np.save(model_path+'/screens.npy', screens)
     print('! data done')
@@ -545,11 +552,11 @@ def predict():
         for method_ind in range(num_methods):
             method = Method_list[method_ind]
 
-            selected_terms = []        # ID of terms that the user has given feedback to
-            feedback_terms = []        # feedback value on the selected terms
-            recommended_terms = []     # list of ID of terms that have been recommended to the user
-            selected_docs = []         # ID of snapshots that the user has given feedback to (may not be available in practice)
-            feedback_docs = []         # feedback value on the selected snapshots (may not be available in practice)
+#            selected_terms = []        # ID of terms that the user has given feedback to
+#            feedback_terms = []        # feedback value on the selected terms
+#            recommended_terms = []     # list of ID of terms that have been recommended to the user
+#            selected_docs = []         # ID of snapshots that the user has given feedback to (may not be available in practice)
+#            feedback_docs = []         # feedback value on the selected snapshots (may not be available in practice)
 
             print('Loading real-time generated snapshots...')
             all_online_docs = []   # all snapshots generated from realtime user activity
@@ -659,7 +666,7 @@ def predict():
 
         # data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],docs[sorted_docs_valid[i]].text) for i in range(100) if json.loads(docs[sorted_docs_valid[i]].oslog)['title'] not in no_rec_doc_IDs]
         
-        data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],"") for i in range(200)]
+        data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],"") for i in range(500) if 'docs.google' not in json.loads(docs[sorted_docs_valid[i]].oslog)['url']]
         print("document_ID")
         # either this
         data_output["pair_similarity"] = []
@@ -702,6 +709,236 @@ def predict():
     except Exception as e:
         print(e)
         return "uploaded failed"
+
+# feedback
+@app.route('/feedback.php', methods=['GET','POST'])
+def feedback():
+    try:
+        userid = "FC3FDBA7DDEF"
+        print(json.loads(request.form['user_feedback']))
+        # Predict here
+        # get again most recent frame
+        # query_docs = FileContent.query.filter((FileContent.userid == userid)).order_by(asc(FileContent.pic_date))
+        now = datetime.utcnow()
+        rounded = now - timedelta(minutes=1740)
+        query_docs = FileContent.query.filter_by(userid=userid).filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
+        docs = [doc for doc in query_docs if doc.text.strip()!='']
+        print(len(docs))
+        recent = list(set([(json.loads(screen.oslog)['url'],getDoc(screen.oslog)) for screen in docs[-2:]]))
+        model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
+        print(len(docs))
+        # if userid in allDataLoad:
+        # data = DataLoader(model_path)
+        # data = allDataLoad[userid]
+        # data.print_info()
+        # params["corpus_directory"] = model_path
+        # projector = DataProjector(data, params, model_path)
+        # projector.generate_latent_space()
+        # projector.create_feature_matrices()
+        data, projector =  allDataLoad[userid][0], allDataLoad[userid][1]
+        print('load model')
+
+#        selected_terms = []        # ID of terms that the user has given feedback to
+#        feedback_terms = []        # feedback value on the selected terms
+#        recommended_terms = []     # list of ID of terms that have been recommended to the user
+#        selected_docs = []         # ID of snapshots that the user has given feedback to (may not be available in practice)
+#        feedback_docs = []         # feedback value on the selected snapshots (may not be available in practice)
+#        pinned_item = []           # the items that are pinned in the frontend (needed for calculating pair similarity)
+
+
+        # save user feedbacks to update the model in the next iteration
+        exp_feedbacks = json.loads(request.form['user_feedback'])#input_data.get('user_feedback')
+        for i in range(len(exp_feedbacks)):
+            id = int(exp_feedbacks[i][0]) #id of the selected item
+            #fb_Val coding: 1: pinning, 0:unpinning, -1:removing
+            fb_val = float(exp_feedbacks[i][1]) #feedback of the selected item
+
+            #TODO: this is a HACK. we assume that document ID is ID + 600000.
+            # This way the frontend can use the same logic for documents and terms.
+            if id >= 600000: # then it is a document feedback
+                #the input is like {"user_feedback":[[doc_id+600000,feedback_val],...]}
+                id = id - 600000
+                # Based on FOCUS requirements we will remove the previous feedback on the same item
+                repeated_indx = [index for index, j in enumerate(selected_docs) if j == id]
+                if len(repeated_indx) > 0:
+                    del selected_docs[repeated_indx[0]]
+                    del feedback_docs[repeated_indx[0]]
+                #First remove the same index feedback and then if it was 1 add it to the feedback list (O.W. just remove)
+                if fb_val == 1: # if a doc is selected
+                    feedback_docs.append(fb_val)
+                    selected_docs.append(id)
+            else: #it is a term feedback
+                #the input is like {"user_feedback":[[term_id,feedback_val],...]}
+                # Based on FOCUS requirements we will remove the previous feedback on the same item
+                print(fb_val,id)
+                repeated_indx = [index for index, j in enumerate(selected_terms) if j == id]
+                if len(repeated_indx) > 0:
+                    del selected_terms[repeated_indx[0]]
+                    del feedback_terms[repeated_indx[0]]
+                #First remove the same index feedback and then if it was 1 add it to the feedback list (O.W. just remove)
+                if fb_val == 1: # if an item is pinned
+                    pinned_item.append(id)
+                    feedback_terms.append(fb_val)
+                    selected_terms.append(id)
+                if fb_val == 0: # if an item is unpinned
+                    pinned_item.remove(id)
+        print(selected_terms, feedback_terms,selected_docs, feedback_docs,pinned_item)
+        for method_ind in range(num_methods):
+            method = Method_list[method_ind]
+
+            
+            print('Loading real-time generated snapshots...')
+            all_online_docs = []   # all snapshots generated from realtime user activity
+            fv_online_docs = []    # considered snapshots generated from realtime user activity
+            fb_online_docs = []    # dummy feedback for the newly generated snapshots
+
+            online_data = docs
+            # print(online_data[-1])
+            online_screens = [screen.text for screen in online_data[-2:]]
+            online_entities = [getEntities(screen.entities) for screen in online_data[-2:]]
+            online_apps = [getApp(screen.oslog) for screen in online_data[-2:]]
+            online_docs = [getDoc(screen.oslog) for screen in online_data[-2:]]
+            online_webqueries = [getWebQuery(screen.oslog) for screen in online_data[-2:]]
+            fv_online_docs = getOnlineDocs(model_path, online_screens, online_entities, online_apps, online_docs, online_webqueries)
+            fb_online_docs+= [1 for i in range(len(fv_online_docs))]
+
+
+            if method == "LSA-coupled-Thompson":
+                # initialize the user model in the projected space
+                user_model = UserModelCoupled(params)
+                # create the design matrices for docs and terms
+                user_model.create_design_matrices(projector, selected_terms, feedback_terms,selected_docs, feedback_docs, fv_online_docs, fb_online_docs)
+                #user_model.create_design_matrices(projector, selected_terms, feedback_terms, [1], [2], [[(1,2),(4,3)], [(2,2),(14,1)] ], [0.5, 0.1])
+                # posterior inference
+                user_model.learn()
+                # Thompson sampling for coupled EVE
+                #TODO: test having K thompson sampling for the K recommendations
+                if params["Thompson_exploration"]:
+                    theta = user_model.thompson_sampling()
+                else:
+                    theta = user_model.Mu # in case of no exploration, use the mean of the posterior
+                scored_docs = np.dot(projector.doc_f_mat, theta)
+                scored_terms = np.dot(projector.term_f_mat, theta)
+                #print theta
+
+            if method == "LSA-coupled-UCB":
+                # initialize the user model in the projected space
+                user_model = UserModelCoupled(params)
+                # create the design matrices for docs and terms
+                user_model.create_design_matrices(projector, selected_terms, feedback_terms,selected_docs, feedback_docs, fv_online_docs, fb_online_docs)
+                # posterior inference
+                user_model.learn()
+                # Upper confidence bound method
+                scored_docs = user_model.UCB(projector.doc_f_mat)
+                scored_terms = user_model.UCB(projector.term_f_mat)
+
+            if method == "Random":
+                scored_docs = np.random.uniform(0,1,projector.num_docs)
+                scored_terms = np.random.uniform(0,1,projector.num_terms)
+
+            #---------------------- 3.4: gather user feedback ---------------------------#
+            #sort items based on their index
+            #todo: if time consuming then have k maxs instead of sort
+            sorted_docs = sorted(range(len(scored_docs)), key=lambda k:scored_docs[k], reverse=True)
+            # make sure the selected items are not recommended to user again
+            sorted_docs_valid = [doc_idx for doc_idx in sorted_docs if doc_idx not in set(selected_docs)]
+
+            # make sure the selected terms are not recommended to user again
+            sorted_terms = sorted(range(len(scored_terms)), key=lambda k:scored_terms[k], reverse=True)
+
+            sorted_views_list = []  # sorted ranked list of each view
+            for view in range(1, data.num_views):
+                # sort items of each view. Exclude (or not exclude) the previously recommended_terms.
+                if params["repeated_recommendation"]:
+                    sorted_view = [term_idx for term_idx in sorted_terms
+                                   if term_idx not in set(selected_terms) and data.views_ind[term_idx] == view]
+                else:
+                    sorted_view = [term_idx for term_idx in sorted_terms
+                                   if term_idx not in set(recommended_terms) and data.views_ind[term_idx] == view]
+
+                sorted_views_list.append(sorted_view)
+
+            for view in range(1, data.num_views):
+                print('view %d:' %view)
+                for i in range(min(params["suggestion_count"],data.num_items_per_view[view])):
+                    print('    %d,' %sorted_views_list[view-1][i] + ' ' + data.feature_names[sorted_views_list[view-1][i]])
+            print('Relevant document IDs (for debugging):')
+            for i in range(params["suggestion_count"]):
+                print('    %d' %sorted_docs_valid[i])
+
+
+        #organize the recommentations in the right format
+        data_output = {}
+        data_output["keywords"] = [(sorted_views_list[0][i],data.feature_names[sorted_views_list[0][i]],
+                                    scored_terms[sorted_views_list[0][i]]) for i in range(min(params["suggestion_count"],data.num_items_per_view[1])) ]
+        print("key")
+        data_output["applications"] = [(sorted_views_list[1][i],data.feature_names[sorted_views_list[1][i]],
+                                        scored_terms[sorted_views_list[1][i]]) for i in range(min(params["suggestion_count"],data.num_items_per_view[2]))]
+        print("app")
+        data_output["people"] = [(sorted_views_list[2][i],data.feature_names[sorted_views_list[2][i]],
+                                    scored_terms[sorted_views_list[2][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[3]))]
+        print("people")
+
+        data_output["webqueries"] = [(sorted_views_list[3][i],data.feature_names[sorted_views_list[3][i]],
+                                    scored_terms[sorted_views_list[3][i]] ) for i in range(min(params["suggestion_count"],data.num_items_per_view[4])) if data.feature_names[sorted_views_list[3][i]] != ""]
+        print("webqueries")
+        no_rec_doc_IDs = list(set([json.loads(screen.oslog)['title'] for screen in docs]))
+        print(no_rec_doc_IDs)
+        print(sorted_docs_valid[1])
+        docs = allDataLoad[userid][2]
+        print(len(docs))
+        print(docs[0].oslog)
+        # TODO: how many document? I can also send the estimated relevance.
+        #data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url']) for i in range(params["suggestion_count"])]
+        #TODO: THis is the hack to distinguish doc and term IDS. Add 600000 to doc IDs for frontend
+        # data_output["document_ID"] = [(sorted_docs_valid[i],loadLOG(sorted_docs_valid[i])['title'],loadLOG(sorted_docs_valid[i])['url'],os.path.join(snapshot_directory, "1513349785.60169.jpeg"), loadLOG(sorted_docs_valid[i])['appname']) for i in range(100)]
+
+        # data_output["document_ID"] = [(sorted_docs_valid[i],json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],docs[sorted_docs_valid[i]].text) for i in range(100) if json.loads(docs[sorted_docs_valid[i]].oslog)['title'] not in no_rec_doc_IDs]
+        
+        data_output["document_ID"] = [(sorted_docs_valid[i]+600000,json.loads(docs[sorted_docs_valid[i]].oslog)['title'],json.loads(docs[sorted_docs_valid[i]].oslog)['url'],'../pic/'+str(docs[sorted_docs_valid[i]].id)+'.jpeg',json.loads(docs[sorted_docs_valid[i]].oslog)['appname'],"") for i in range(50) if 'docs.google' not in json.loads(docs[sorted_docs_valid[i]].oslog)['url']]
+        print("document_ID")
+        # either this
+        data_output["pair_similarity"] = []
+        print("pair_similarity")
+        # input docs
+        data_output["recent_docs"] = recent
+        print("recent_docs")
+        # or this to allow feedback on recs
+        # new_recommendations = []
+        # for view in range(1, data.num_views):
+        #     for i in range(min(params["suggestion_count"],data.num_items_per_view[view])):
+        #         new_recommendations.append(sorted_views_list[view-1][i])
+        #         if sorted_views_list[view-1][i] not in set(recommended_terms):
+        #             recommended_terms.append(sorted_views_list[view-1][i])
+        #
+        # item_list = list(set(new_recommendations + pinned_item))
+        #     # an array to hold the feature vectors
+        # recommended_fv = np.empty([len(item_list), projector.num_features])
+        # for i in range(len(item_list)):
+        #     recommended_fv[i, :] = projector.item_fv(item_list[i]) #get the feature vector
+        # #Compute the dot products
+        # sim_matrix = np.dot(recommended_fv, recommended_fv.T)
+        # #normalize the dot products
+        # sim_diags = np.diagonal(sim_matrix)
+        # sim_diags = np.sqrt(sim_diags)
+        # for i in range(len(item_list)):
+        #     sim_matrix[i,:] = sim_matrix[i,:]/sim_diags
+        # for i in range(len(item_list)):
+        #     sim_matrix[:,i] = sim_matrix[:,i]/sim_diags
+        # #save pairwise similarities in a list of tuples
+        # all_sims = [(item_list[i],item_list[j],sim_matrix[i,j])
+        #             for i in range(len(item_list)-1) for j in range(i+1,len(item_list))]
+        # data_output["pair_similarity"] = all_sims
+
+        print("prepared recs")
+        newRec = RecContent(userid=userid, text=json.dumps(data_output))
+        db.session.add(newRec)
+        db.session.commit() 
+        return "feedback done"
+    except Exception as e:
+        print(e)
+        return "feedback failed"
+
 # lab
 @app.route('/checklicenseid.php', methods=['POST'])
 def licenseid():

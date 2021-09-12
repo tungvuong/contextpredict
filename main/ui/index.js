@@ -32,7 +32,8 @@ $(document).ready(function () {
                         {"appType":"textedit", "imagePath":"./images/textedit.png"},
                         {"appType":"Google.Chrome", "imagePath":"./images/Chrome.png"}];
 
-  var userid = parseURLParams(window.location.href)["userid"][0]
+  // var userid = parseURLParams(window.location.href)["userid"][0]
+  var userid = "FC3FDBA7DDEF";
   // socket.on('sendAllLists', function(data){
   // function renderInitialData (data) {
                   
@@ -43,6 +44,7 @@ $(document).ready(function () {
   // socket.on('entityData', function(data){
   setInterval(function() {
     $("#sysStatus").load("/retrieve/"+userid, function(data) {
+        console.log('get backend' + userid);
         oldData = newData;
         newData = JSON.parse(data);
         enterData = [], updateData = [], exitData = [];
@@ -55,6 +57,8 @@ $(document).ready(function () {
         topics = newData.keywords;
         dataKeys = Object.keys(newData);
         dataKeys.splice(dataKeys.indexOf("pair_similarity"), 1);
+        dataKeys.splice(dataKeys.indexOf("webqueries"), 1);
+        dataKeys.splice(dataKeys.indexOf("recent_docs"), 1);
         // Salvatore
         var docMerged = new Map();
         for (var i = 0; i < documents.length; i++) {
@@ -80,7 +84,6 @@ $(document).ready(function () {
         docMerged.set(documents[i][1], documents[i]);
         }
         }
-        //console.log(docMerged)
         var iteratorDocMerged = docMerged.values();
         ////////////////////
         // create enterData and updateData
@@ -259,6 +262,7 @@ $(document).ready(function () {
                 if (selectStatusWhenClicking) {
                   // socket.emit('userFeedback', JSON.stringify({"user_feedback":[[id, 0]]}));
                   console.log(JSON.stringify({"user_feedback":[[id, 0]]}));
+                  $("#sysStatus").load("/feedback.php", {"user_feedback":JSON.stringify([[id, 0]])} , function(data) {console.log(data)});
                 } else {
                   // socket.emit('userFeedback', JSON.stringify({"user_feedback":[[id, 1]]}));
                   // if (id == "7") {
@@ -271,6 +275,7 @@ $(document).ready(function () {
                   //   socket.emit('send2AfterFBData');
                   // }
                   console.log(JSON.stringify({"user_feedback":[[id, 1]]}));
+                  $("#sysStatus").load("/feedback.php", {"user_feedback":JSON.stringify([[id, 1]])} , function(data) {console.log(data)});
                 }
               })
               .append($('<div></div>')
@@ -281,18 +286,18 @@ $(document).ready(function () {
                   .addClass("entityOpenType")))
               .append($('<div></div>')
                 .addClass("label"))
-              // .append($('<a></a>')
+              .append($('<a></a>')
                 //.addClass("open " + (enterData[i].url.length == 0 ? " hide" : ""))
                 //.attr('href', enterData[i].url)
-                // .addClass("open ")
-                // .attr('href', (enterData[i].url.length == 0 ? enterData[i].entityIcon : enterData[i].url.split(',')[0]))
-                // .attr('id', enterData[i].id)
-                // .on('click', function() {
-                //     // socket.emit('userFeedback', JSON.stringify({"user_openlink":[[$(this).attr('id'), $(this).attr('href')]]}));
-                //     console.log( "userOpenLink: " + $(this).attr('id') );
-                //     })
-                // .attr('target', '_blank')
-                // .text("open"))
+                .addClass("open ")
+                .attr('href', (enterData[i].url.length == 0 ? enterData[i].entityIcon : enterData[i].url.split(',')[0]))
+                .attr('id', enterData[i].id)
+                .on('click', function() {
+                    // socket.emit('userFeedback', JSON.stringify({"user_openlink":[[$(this).attr('id'), $(this).attr('href')]]}));
+                    console.log( "userOpenLink: " + $(this).attr('id') );
+                    })
+                .attr('target', '_blank')
+                .text("open"))
               );
 
           var displayedLabel = enterData[i].label;
@@ -348,7 +353,7 @@ $(document).ready(function () {
           }, 1000)
         }
     });
-  },5000); // call every 10 seconds
+  },2000); // call every 10 seconds
   // }
 
   function clickOpen(id){
@@ -425,7 +430,8 @@ $(document).ready(function () {
                 updateSecreenSeletedList();
 
                 //update back-end
-                socket.emit('userFeedback', JSON.stringify({"user_feedback":[[id, 0]]}));
+                //socket.emit('userFeedback', JSON.stringify({"user_feedback":[[id, 0]]}));
+                $("#sysStatus").load("/feedback.php", {"user_feedback":JSON.stringify([[id, 0]])} , function(data) {console.log(data)});
                 console.log(JSON.stringify({"user_feedback":[[id, 0]]}));
               })));
       }
@@ -438,6 +444,7 @@ $(document).ready(function () {
     for (var i = (selectedEntities.length - 1); i >= 0; i--) {
       id = selectedEntities[i].id;
       // socket.emit('userFeedback', JSON.stringify({"user_feedback":[[id, 0]]}));
+      $("#sysStatus").load("/feedback.php", {"user_feedback":JSON.stringify([[id, 0]])} , function(data) {console.log(data)});
       console.log(JSON.stringify({"user_feedback":[[id, 0]]}));
       selectedEntities.splice( i, 1);
     }

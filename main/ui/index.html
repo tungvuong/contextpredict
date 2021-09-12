@@ -6,7 +6,7 @@
     <link rel="stylesheet" type="text/css" href="index.css" />
 
     <!-- jquery -->
-    <script src="./lib/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
     <!-- <script>window.$ = window.jQuery = require('./lib/jquery-1.12.4.js');</script> -->
 
     <!-- jquery-ui -->
@@ -21,8 +21,38 @@
   </head>
 
   <body>
-    <!-- <div class="separator"></div> -->
+    <div id="selectPanel">
+      <div id="selection" class="empty">
+        Select items to interact with
+      </div>
+      <div id="clearSelection">
+        Clear selection
+      </div>
+    </div>
+    <div class="separator"></div>
     <div id="flowingArea">
+      <div id="people">
+        <div class="entityLabel">PEOPLE</div>
+        <div id="peopleList" class="list">
+          <div class="entity id"></div>
+          <div class="entity id"></div>
+          <div class="entity id"></div>
+          <div class="entity id"></div>
+          <div class="entity id"></div>
+        </div>
+      </div>
+      <!--div class="separator"></div-->
+      <div id="applications">
+        <div class="entityLabel">APPLICATIONS</div>
+        <div id="applicationList" class="list">
+          <div class="entity id"></div>
+          <div class="entity id"></div>
+          <div class="entity id"></div>
+          <div class="entity id"></div>
+          <div class="entity id"></div>
+        </div>
+      </div>
+      <!--div class="separator"></div-->
       <div id="documents">
         <div class="entityLabel">DOCUMENTS</div>
         <div id="documentList" class="list">
@@ -35,7 +65,7 @@
       </div>
       <!--div class="separator"></div-->
       <div id="topics">
-        <div class="entityLabel">KEYWORDS</div>
+        <div class="entityLabel">TOPICS</div>
         <div id="topicList" class="list">
           <div class="entity id"></div>
           <div class="entity id"></div>
@@ -44,13 +74,14 @@
           <div class="entity id"></div>
         </div>
       </div>
-      <!-- <div class="separator"></div> -->
+      <div class="separator"></div>
     </div>
   </div>
   <div id="sysStatus" style="font-weight: bold; display:none;"></div>
-  <!-- <button id="sendInitialDataButton" type="button">Send init data</button> -->
-  <!-- <button id="send1AfterSkpyeDataButton" type="button">Send 1 after Skype data</button>
-  <button id="send2AfterFBDataButton" type="button">Send 2 after FB data</button>
-  <button id="send3AfterTuukkaDataButton" type="button">Send 3 after Tuukka data</button> -->
+    <button id="startStopTheLab" type="button">START</button>
+    <!-- <button id="sendInitialDataButton" type="button">Send init data</button> -->
+    <!-- <button id="send1AfterSkpyeDataButton" type="button">Send 1 after Skype data</button>
+    <button id="send2AfterFBDataButton" type="button">Send 2 after FB data</button>
+    <button id="send3AfterTuukkaDataButton" type="button">Send 3 after Tuukka data</button> -->
   </body>
 </html>

@@ -39,7 +39,7 @@ $(document).ready(function () {
   //});
   // socket.on('entityData', function(data){
   setInterval(function() {
-    $("#sysStatus").load("/retrieve", function(data) {
+    $("#sysStatus").load("/retrieve/FC3FDBA7DDEF", function(data) {
         oldData = newData;
         newData = JSON.parse(data);
         enterData = [], updateData = [], exitData = [];
