@@ -4,6 +4,9 @@ Coadapt project
 
 sudo python3 -m pip install -e .
 
+#edit host in .env
+nano .env
+
 cd main
 
 cp data.sqlite_template data.sqlite
