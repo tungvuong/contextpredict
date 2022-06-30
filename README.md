@@ -6,7 +6,7 @@ sudo python3 -m pip install -e .
 
 cd main
 
-mv data.sqlite_template data.sqlite
+cp data.sqlite_template data.sqlite
 
 sudo python3 -m flask run
 
