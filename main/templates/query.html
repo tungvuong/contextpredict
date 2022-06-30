@@ -18,29 +18,6 @@
 <!-- Jumbo Text -->
 {% block jumbo_text%} 
 
-    <form method="POST" action="/upload" enctype="multipart/form-data">
-        <!-- File Upload-->
-        <div class="form-group">
-            <label for="inputFile">File input</label>
-            <input class="form-control-file" type="file" name="inputFile">
-        </div>
-
-         <!-- Location -->
-        <div class="form-group">
-           
-            <label for="location">Location</label>
-            <input class="form-control" type="text" name="location">
-        </div>
-
-        <!-- Text -->
-        <div class="form-group">
-            <label for="text">Write Text</label>
-            <textarea class="form-control" name="text" id="text" rows="5" placeholder="Add a Description"></textarea>
-        </div>
-
-        <!-- Submit -->        
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
 {% endblock %}
 
 <!-- Jumbo Subtext -->

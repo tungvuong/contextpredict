@@ -16,11 +16,15 @@ from pathlib import Path
 import shutil
 
 # Utility
-# comment this when running python3 create_db.py
-from .DataLoader import DataLoader
-from .DataProjector import DataProjector
-from .UserModelCoupled import UserModelCoupled
-from .Utils import *
+# comment out this when running python3 create_db.py
+from libs import DataLoader
+from libs import DataProjector
+from libs import UserModelCoupled
+from libs.Utils import *
+#from .DataLoader import DataLoader
+#from .DataProjector import DataProjector
+#from .UserModelCoupled import UserModelCoupled
+#from .Utils import *
 
 # Tesseract
 # import pytesseract
@@ -123,29 +127,6 @@ class Pic:
         self.pic_date = None
         self.rendered_data = None
 
-# print('begin extract data ' + 'FA3441DEC434')
-# model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/C1MR3058G940')
-# Path(model_path).mkdir(parents=True, exist_ok=True)
-# # file_data = FileContent.query.filter((FileContent.userid == 'FA3441DEC434')).order_by(asc(FileContent.pic_date))
-# screens = np.load(model_path+'/screens.npy', allow_pickle=True)
-# print('! data done', len(screens))
-# texts = [screen.text for screen in screens if screen.text.strip()!='']
-# entities = [getEntities(screen.entities) for screen in screens if screen.text.strip()!='']
-# apps = [getApp(screen.oslog) for screen in screens if screen.text.strip()!='']
-# docs = [getDoc(screen.oslog) for screen in screens if screen.text.strip()!='']
-# webqueries = [getWebQuery(screen.oslog) for screen in screens if screen.text.strip()!='']
-# buildCorpus(model_path,texts,entities,apps,docs,webqueries)
-
-# print('! buildCorpus done')
-
-
-# data1 = DataLoader(model_path)
-# docs1 = np.load(model_path+'/screens.npy', allow_pickle=True)
-# projector1 = DataProjector(data1, params, model_path)
-# projector1.generate_latent_space()
-# projector1.create_feature_matrices()
-# allDataLoad['C1MR3058G940'] = (data1, projector1, docs1)
-
 # Index
 @app.route('/index', methods=['GET', 'POST'])
 @app.route('/')
@@ -190,11 +171,7 @@ def index():
 # Query
 @app.route('/query')
 def query():
-    now = datetime.utcnow()
-    rounded = now - timedelta(minutes=(60*24*0)+(60*1))
-    all_pics = FileContent.query.filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
-    # all_pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_date))
-
+    all_pics = FileContent.query.limit(5).all()
     tmp_pics = []
     for pic in all_pics:
         _pic = Pic()
@@ -228,7 +205,6 @@ def corpus():
 
 # Render the pics
 def render_picture(data):
-    
     render_pic = base64.b64encode(data).decode('ascii') 
     return render_pic
 
@@ -408,12 +384,7 @@ def pic(pic_id):
     img_byte_arr = img_byte_arr.getvalue()
     response = make_response(img_byte_arr)
     response.headers.set('Content-Type', 'image/jpeg')
-    #response.headers.set(
-    #    'Content-Disposition', 'attachment', filename='%s.jpg' % pic_id)
     return response
-    
-    # # return "data:;base64,"+get_pic.rendered_data
-    # return render_template('pic.html', pic=get_pic)
 
 # Update
 @app.route('/update/<int:pic_id>', methods=['GET', 'POST'])
@@ -475,8 +446,6 @@ def predict():
         rounded = pic_date - timedelta(minutes=30)
         query_docs = FileContent.query.filter_by(userid=userid).filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
         docs = [doc for doc in query_docs if doc.text.strip()!='']
-
-        
         curr = Image.open(BytesIO(data))
         prev = None
         change = None
@@ -536,14 +505,6 @@ def predict():
         docs = [doc for doc in query_docs if doc.text.strip()!='']
         recent = list(set([(json.loads(screen.oslog)['url'],getDoc(screen.oslog)) for screen in docs[-2:]]))
         model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models/'+userid)
-        # if userid in allDataLoad:
-        # data = DataLoader(model_path)
-        # data = allDataLoad[userid]
-        # data.print_info()
-        # params["corpus_directory"] = model_path
-        # projector = DataProjector(data, params, model_path)
-        # projector.generate_latent_space()
-        # projector.create_feature_matrices()
         data, projector =  allDataLoad[userid][0], allDataLoad[userid][1]
         print('load model')
 
@@ -939,7 +900,7 @@ def feedback():
         print(e)
         return "feedback failed"
 
-# lab
+# for lab, nothing useful
 @app.route('/checklicenseid.php', methods=['POST'])
 def licenseid():
     return 'successful'
@@ -948,7 +909,6 @@ def licenseid():
 @app.route('/retrieve/<path:path>')
 @cross_origin(origin='*',headers=['Content- Type','Authorization'])
 def retrieve(path):
-    # userid = 'C1MR3058G940'
     # all_recs = RecContent.query.filter_by(userid=path).order_by(asc(RecContent.rec_date))
     all_recs = RecContent.query.order_by(asc(RecContent.rec_date))
     res = {}
@@ -1007,7 +967,6 @@ def csv(path):
     sr_app = defaultdict(int)
 
     file_data = FileContent.query.filter((FileContent.userid == path)).filter(FileContent.pic_date >= rounded).order_by(asc(FileContent.pic_date))
-    #screens = [screen.text for screen in file_data if screen.text.strip()!='']
     entities = [getEntities(screen.entities) for screen in file_data if screen.text.strip()!='']
     apps = [getApp(screen.oslog) for screen in file_data if screen.text.strip()!='']
     docs = [getDoc(screen.oslog)+' '+json.loads(screen.oslog)['url'] for screen in file_data if screen.text.strip()!='']
@@ -1079,17 +1038,52 @@ def csv(path):
         headers={"Content-disposition":
                  "attachment; filename=rate.csv"})
 
+# get rec
+# Query
+@app.route('/recommend', methods=['POST','GET'])
+def recommend():
+    if(request.form):
+        dt = datetime.strptime(request.form["startdate"], '%Y-%m-%dT%H:%M') #2017-06-01T08:30
+        userid = request.form["userid"]
+        print(dt)
+        print(request.form["userid"])
+        now = dt
+        rounded = now + timedelta(minutes=(5)) #FileContent.userid==request.form["userid"]
+        all_pics = FileContent.query.filter(FileContent.userid==userid, FileContent.pic_date >= now, FileContent.pic_date<= rounded).order_by(desc(FileContent.pic_date))
+        #all_pics = FileContent.query.order_by(asc(FileContent.pic_date)).all()
+        #all_pics = FileContent.query.filter((FileContent.userid == "F4066907F9F0")).order_by(asc(FileContent.pic_date))
+        # all_pics = FileContent.query.filter_by(userid="FA3441DEC434").filter(FileContent.pic_date >= rounded).order_by(desc(FileContent.pic_>
+        print(all_pics.count())
+        tmp_pics = []
+        for pic in all_pics:
+            _pic = Pic()
+            pic_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pics/'+pic.userid)
+            pic_fname = pic_path+'/'+json.loads(pic.oslog)['filename']+'.jpeg'
+            roi_img = Image.open(pic_fname)
+            img_byte_arr = io.BytesIO()
+            roi_img.save(img_byte_arr, format='JPEG')
+            img_byte_arr = img_byte_arr.getvalue()
+
+            _pic.rendered_data = render_picture(img_byte_arr)
+            _pic.id = pic.id
+            _pic.name = filenameToTime(pic.name.split('.')[0])
+            _pic.userid = pic.userid
+            _pic.text = pic.text
+            _pic.entities = pic.entities
+            _pic.webquery = pic.webquery
+            _pic.oslog = pic.oslog
+            _pic.pic_date = pic.pic_date
+            tmp_pics.append(_pic)
+        all_pics = tmp_pics
+
+        return render_template('recommend.html', all_pic=all_pics[:10], inputdate=request.form["startdate"], default_userid=userid)
+    else:
+        return render_template('recommend.html', all_pic=[], inputdate="2022-05-19T16:35", default_userid="C1MR3058G940")
 
 # UI
-# @app.route('/ui', methods=['GET', 'POST'])
-# def ui():
-#     return render_template('ui/index.html')
 @app.route('/ui/<path:path>')
 def send_js(path):
     return send_from_directory('ui', path)
-# @app.route('/upload', methods=['POST'])
-# def upload():
-# 	return {'type':'upload'}
 
 if __name__ == "__main__":
-	pass
+    pass

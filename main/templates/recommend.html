@@ -1,0 +1,68 @@
+<!-- Basic Sample to other HTML Pages -->
+{% extends 'base.html'%}
+<!-- MACROS Imports -->
+{% from 'macro.html' import flash %}
+
+<!-- Title -->
+{% block title %} Index Pic Uploader{%endblock%}
+
+<!-- Jumbo Header -->
+{% block jumpo_title%} 
+    <h1>Get Recommendation</h1>
+    <!-- Flash -->
+    {{flash()}}
+{% endblock%}
+
+<!-- Jumbo Text -->
+{% block jumbo_text%} 
+
+    <form method="POST" action="/recommend" enctype="multipart/form-data">
+        <!-- Text -->
+        <div class="form-group">
+	    <label for="text">User ID</label> </br>
+	    <input type="text" id="userid" name="userid"  value="{{default_userid}}"></br>
+            <label for="text">Input Date Time</label>
+            <input class="form-control" id="startdate" type="datetime-local" name="startdate" value="{{inputdate}}">
+        </div>
+
+        <!-- Submit -->        
+        <button type="submit" class="btn btn-primary">Show</button>
+    </form> </br>
+
+{% endblock %}
+
+<!-- Jumbo Subtext -->
+{% block jumbo_content%} 
+<form method="GET" action="/csv/C1MR3058G940" enctype="multipart/form-data">
+        <!-- Text -->
+        <div class="form-group" style="display:none">
+            <input class="form-control" id="startdate" type="datetime-local" name="startdate" value="{{inputdate}}">
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn btn-primary">Get Recommendation</button>
+    {% for pic in all_pic%}
+        <div  class="d-flex justify-content-center">
+            <div class="card" style="width: 50%;">
+                <!-- Render Pic -->
+                <div class="card-body">
+		    <input type="checkbox" name="inputForRec" value="pic.name">
+                    <!-- Pic Name -->    
+                    <h3>
+                        <a class="card-title" href="{{url_for('pic', pic_id=pic.id)}}">{{pic.name}}</a>
+                        <!-- Location Badge -->
+                        <span class="badge badge-secondary">User: {{pic.userid}}</span>
+                    </h3>           
+                </div>
+		<img class="card-img-top" src="data:;base64,{{pic.rendered_data}}" alt="WOOW">
+            </div>
+        </div> </br>        
+    {% endfor %}
+</form>
+{% endblock%}
+
+<!-- Jumbo BTN  -->
+{% block jumbo_btn %}
+
+
+{% endblock%}

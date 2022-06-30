@@ -34,7 +34,7 @@ import en_core_web_sm
 
 # NLTK Stop words
 import nltk
-nltk.download("stopwords")
+#nltk.download("stopwords")
 from nltk.corpus import stopwords
 stop_words = stopwords.words('english')
 nlp = en_core_web_sm.load()
@@ -69,6 +69,7 @@ params = {
     "snapshots_directory": 'user activity',
     # True: Use the simulated user data to simulate the user feedback
     "Simulated_user": False,
+    "num_topics": 20,
 }
 
 # Set the desirable method to True for the experiment
@@ -121,7 +122,7 @@ def detect_entities(mytext):
 
 if __name__ == '__main__':
 	testdata = {'control': 'Complete'}
-	print(preprocess(testdata))
+	print(testdata)
 def iter_docs(screens, entities, apps, docs, webqueries, stoplist, amount_docs_already_index):
     for idx, text in enumerate(screens):
         if (idx >= amount_docs_already_index):
@@ -135,11 +136,17 @@ def iter_docs(screens, entities, apps, docs, webqueries, stoplist, amount_docs_a
             texts = [x for x in
                     gensim.utils.tokenize(text, lowercase=True, deacc=True,
                                          errors="ignore")
-                   if x not in stoplist and len(x)>3]
+                   if x not in stoplist and len(x)>2]
             # texts+= entities_in_text
             # texts+= [apps[idx]]
             # texts+= [docs[idx]]
             # texts+= [webqueries[idx]]
+            #temp remove after CHI
+            _docs = []
+            for d in docs:
+                _docs+=d
+            docs = _docs
+            #####
             if (len(entities_in_text)>0): 
 	            texts+= entities_in_text
             if (len(apps[idx])>0): 
@@ -160,6 +167,7 @@ class MyCorpus(object):
         frequency = defaultdict(int)
         for text in texts_for_frequency:
             for token in text:
+                print(token)
                 frequency[token] += 1
         self.texts = [[token for token in text if frequency[token] > 0]
                       for text in self.texts]
@@ -207,6 +215,12 @@ def buildCorpus(model_path, screens, entities, apps, docs, webqueries):
 	# print(entities)
 	for e in entities:
 		entity_view+= e
+	#temp remove after CHI
+	_docs = []
+	for d in docs:
+		_docs+=d
+	docs = _docs
+	#####
 	for entity_id in corpus.dictionary.doc2bow(entity_view):
 		dictionary_view[entity_id[0]] = 1
 	for app_id in corpus.dictionary.doc2bow(apps):
@@ -238,7 +252,7 @@ def getOnlineDocs(model_path, screens, entities, apps, docs, webqueries):
 				entities_in_text.append(e)
 			text = text.replace(raw_e, "")
 		doc = [x for x in gensim.utils.tokenize(text.strip().lower(), lowercase=True, deacc=True, errors="ignore")
-					if x not in stoplist and len(x)>3] + entities[idx] + [apps[idx]] + [docs[idx]] + [webqueries[idx]]
+					if x not in stoplist and len(x)>2] + entities[idx] + [apps[idx]] + [docs[idx]] + [webqueries[idx]]
 		all_online_docs+= [dictionary.doc2bow(doc)]
 	return all_online_docs
 
@@ -271,40 +285,53 @@ def getEntities(watson):
 	if 'keywords' in detail:
 		for keyword in detail['keywords']:
 			# keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>3 and (len(keyword['text'])==4 and ' ' not in keyword['text']) else []
-			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>3 else []
+			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>2 else []
 	if 'entities' in detail:
 		for keyword in detail['entities']:
-			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>3 else []
+			keywords+= [keyword['text'].lower().replace(' ','_')] if len(keyword['text'])>2 else []
 	return keywords
+
+def getPersons(watson):
+        if watson=='':
+                return []
+        detail = json.loads(watson)
+        persons = []
+        if 'entities' in detail:
+                for entity in detail['entities']:
+                        if entity["type"] == "Person":
+                                persons+= [entity['text'].lower().replace(' ','_')] if len(entity['text'])>2 else []
+        #print(persons)
+        return persons
+
 
 def convertToText(change, lang):
 	detectText = pytesseract.image_to_string(change, lang=lang)
-	# print(detectText)
+	print(detectText)
 	return detectText
 
-# def convertToText(change, lang):
-# 	target_url = "https://vision.googleapis.com/v1/images:annotate?key=AIzaSyDXBo-XUHlHHTN4xefvO9DmLZzCSHLhLCM"
-# 	buffered = BytesIO()
-# 	change.save(buffered, format="JPEG")
-# 	encoded_string = base64.b64encode(buffered.getvalue()).decode("utf8")
-# 	#encoded_string = base64.b64encode(change.read()).decode("utf8")
+#def convertToText(change, lang):
+#	target_url = "https://vision.googleapis.com/v1/images:annotate?key=yourgooglecloudkey"
+#	buffered = BytesIO()
+#	change.save(buffered, format="JPEG")
+#	encoded_string = base64.b64encode(buffered.getvalue()).decode("utf8")
+	#encoded_string = base64.b64encode(change.read()).decode("utf8")
 
-# 	request_data = {"requests":[{"features": [{"type": "TEXT_DETECTION"}], "image": {"content": encoded_string}}]}
-# 	r = requests.post(target_url, data=json.dumps(request_data))
-# 	print(r.status_code, r.reason)
+#	request_data = {"requests":[{"features": [{"type": "TEXT_DETECTION"}], "image": {"content": encoded_string}}]}
+#	r = requests.post(target_url, data=json.dumps(request_data))
+#	print(r.status_code, r.reason)
 
-# 	response = json.loads(r.text.encode("utf-8").strip())
+#	response = json.loads(r.text.encode("utf-8").strip())
 
-# 	detectText = ''
-# 	if 'responses' in response and'textAnnotations' in response['responses'][0]:
-# 		texts = response['responses'][0]['textAnnotations']
-# 		detectText = texts[0]['description']
-# 		locale = texts[0]['locale']
-# 		# writeToFile(json.dumps(response), outPath.replace("converted","google"))
-# 		# if locale!="en" and locale!="fr" and locale!="de" and locale!="it" and locale!="ja" and locale!="ko":
-# 		#     detect_entities_ibm(translate_text(detectText.encode('utf8').strip(), outPath, locale), outPath)
-# 		# else:
-# 		#     print("2) TRANSLATION IGNORED! THIS IS ENGLISH!")
-# 		#     detect_entities_ibm(detectText, outPath)
-# 	print(detectText)
-# 	return detectText
+#	detectText = ''
+#	if 'responses' in response and'textAnnotations' in response['responses'][0]:
+#		texts = response['responses'][0]['textAnnotations']
+#		detectText = texts[0]['description']
+#		locale = texts[0]['locale']
+		# writeToFile(json.dumps(response), outPath.replace("converted","google"))
+		# if locale!="en" and locale!="fr" and locale!="de" and locale!="it" and locale!="ja" and locale!="ko":
+		#     detect_entities_ibm(translate_text(detectText.encode('utf8').strip(), outPath, locale), outPath)
+		# else:
+		#     print("2) TRANSLATION IGNORED! THIS IS ENGLISH!")
+		#     detect_entities_ibm(detectText, outPath)
+#	print(detectText)
+#	return detectText
